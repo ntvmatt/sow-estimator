@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Native Digital - SOW Cost Estimator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f5f5; color: #333; }
+
+    .app-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+    .header { background: #fff; padding: 20px 30px; border-bottom: 3px solid #000; margin-bottom: 30px; }
+    .header h1 { font-size: 24px; font-weight: 600; }
+    .header p { color: #666; margin-top: 5px; }
+
+    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+
+    .panel { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .panel-header { padding: 20px; border-bottom: 1px solid #eee; }
+    .panel-header h2 { font-size: 18px; font-weight: 600; }
+    .panel-body { padding: 20px; }
+
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 8px; font-size: 14px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;
+      font-size: 14px; transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none; border-color: #F5CB5C;
+    }
+    .form-group textarea { min-height: 80px; resize: vertical; }
+
+    .kit-selector { display: grid; gap: 10px; }
+    .kit-option {
+      padding: 15px; border: 2px solid #eee; border-radius: 8px; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .kit-option:hover { border-color: #F5CB5C; background: #fffef5; }
+    .kit-option.selected { border-color: #F5CB5C; background: #F5CB5C20; }
+    .kit-option.recommended { border-color: #4CAF50; background: #E8F5E9; }
+    .kit-option.recommended.selected { border-color: #F5CB5C; background: #F5CB5C20; }
+    .kit-option h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .kit-option p { font-size: 12px; color: #666; }
+    .kit-option .price { font-size: 16px; font-weight: 700; color: #000; margin-top: 8px; }
+    .kit-option .recommended-badge {
+      display: inline-block; background: #4CAF50; color: #fff; font-size: 10px;
+      padding: 3px 8px; border-radius: 10px; margin-left: 8px; font-weight: 600;
+    }
+
+    .brick-list { margin-top: 20px; }
+    .brick-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 15px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 8px;
+    }
+    .brick-item.included { background: #f0fff0; border-color: #90EE90; }
+    .brick-item.excluded { background: #fff5f5; border-color: #ffcccc; opacity: 0.6; }
+    .brick-info { flex: 1; }
+    .brick-name { font-weight: 500; font-size: 14px; }
+    .brick-desc { font-size: 11px; color: #666; margin-top: 2px; }
+    .brick-hours { display: flex; align-items: center; gap: 10px; }
+    .brick-hours input { width: 70px; text-align: center; padding: 8px; }
+    .brick-hours span { font-size: 12px; color: #666; }
+    .brick-toggle { margin-left: 10px; }
+
+    .media-tier-selector { margin-top: 15px; }
+    .media-tier-option {
+      display: flex; align-items: center; padding: 10px;
+      border: 1px solid #eee; border-radius: 6px; margin-bottom: 6px; cursor: pointer;
+    }
+    .media-tier-option:hover { background: #f9f9f9; }
+    .media-tier-option.selected { background: #F5CB5C20; border-color: #F5CB5C; }
+    .media-tier-option input { margin-right: 10px; }
+
+    .summary-section { position: sticky; top: 20px; }
+    .summary-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row.total { font-weight: 700; font-size: 18px; border-top: 2px solid #000; margin-top: 10px; padding-top: 15px; }
+    .summary-row .label { color: #666; }
+    .summary-row.total .label { color: #000; }
+
+    .btn {
+      padding: 14px 28px; border: none; border-radius: 6px; font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-primary { background: #F5CB5C; color: #000; }
+    .btn-primary:hover { background: #e6bc4d; }
+    .btn-secondary { background: #333; color: #fff; }
+    .btn-secondary:hover { background: #555; }
+    .btn-outline { background: transparent; border: 2px solid #333; color: #333; }
+    .btn-outline:hover { background: #333; color: #fff; }
+    .btn-success { background: #4CAF50; color: #fff; }
+    .btn-success:hover { background: #43A047; }
+
+    .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+
+    .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 20px; }
+    .tab { padding: 12px 20px; cursor: pointer; font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+    .tab:hover { color: #F5CB5C; }
+    .tab.active { border-bottom-color: #F5CB5C; color: #000; }
+    .tab.disabled { color: #ccc; cursor: not-allowed; }
+
+    /* Service Toggle Buttons */
+    .service-toggles { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .service-toggle {
+      padding: 12px 20px; border: 2px solid #ddd; border-radius: 8px;
+      background: #fff; cursor: pointer; transition: all 0.2s;
+      font-weight: 500; font-size: 14px;
+    }
+    .service-toggle:hover { border-color: #F5CB5C; background: #fffef5; }
+    .service-toggle.active { border-color: #F5CB5C; background: #F5CB5C; color: #000; }
+
+    /* Recommendation Card */
+    .recommendation-card {
+      background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+      border: 2px solid #4CAF50; border-radius: 12px; padding: 25px; margin-top: 30px;
+    }
+    .recommendation-card h3 { font-size: 18px; margin-bottom: 10px; color: #2E7D32; }
+    .recommendation-card .kit-name { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .recommendation-card .kit-desc { font-size: 14px; color: #555; margin-bottom: 15px; }
+    .recommendation-card .included-services { margin-top: 15px; }
+    .recommendation-card .included-services h4 { font-size: 12px; text-transform: uppercase; color: #666; margin-bottom: 10px; }
+    .recommendation-card .service-tag {
+      display: inline-block; background: #fff; border: 1px solid #4CAF50;
+      padding: 4px 10px; border-radius: 15px; font-size: 12px; margin-right: 6px; margin-bottom: 6px;
+    }
+
+    /* Add-ons Section */
+    .addons-section { margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee; }
+    .addons-section h3 { font-size: 16px; margin-bottom: 15px; color: #666; }
+    .addon-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 15px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 8px;
+      background: #fff;
+    }
+    .addon-item:hover { border-color: #ddd; }
+    .addon-item.selected { background: #F5CB5C20; border-color: #F5CB5C; }
+    .addon-info { flex: 1; }
+    .addon-name { font-weight: 500; font-size: 14px; }
+    .addon-desc { font-size: 11px; color: #666; margin-top: 2px; }
+
+    /* PDF Preview Styles */
+    .pdf-preview { display: none; }
+    .pdf-preview.visible { display: block; }
+
+    #pdf-content {
+      background: #fff; padding: 40px; max-width: 800px; margin: 0 auto;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .pdf-header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
+    .pdf-logo { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+    .pdf-title { font-size: 32px; font-weight: 700; margin-bottom: 5px; }
+    .pdf-client { font-size: 28px; color: #F5CB5C; font-weight: 600; }
+    .pdf-date { font-size: 14px; color: #666; margin-top: 5px; }
+
+    .pdf-mission {
+      font-size: 24px; font-weight: 600; line-height: 1.4; margin: 30px 0;
+      padding: 20px 0;
+    }
+    .pdf-mission span { background: #F5CB5C; color: #000; padding: 2px 6px; }
+
+    .pdf-details { margin: 30px 0; }
+    .pdf-detail-row { margin-bottom: 15px; }
+    .pdf-detail-label { font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 4px; }
+    .pdf-detail-value { font-size: 14px; color: #333; }
+
+    .pdf-services { margin: 30px 0; }
+    .pdf-service-header { background: #000; color: #fff; padding: 15px 20px; font-weight: 600; margin-bottom: 1px; }
+    .pdf-service-item { border: 1px solid #eee; border-top: none; padding: 15px 20px; }
+    .pdf-service-name { font-weight: 600; margin-bottom: 5px; }
+    .pdf-service-name .highlight { color: #F5CB5C; }
+    .pdf-service-desc { font-size: 12px; color: #666; line-height: 1.5; }
+    .pdf-service-desc li { margin-left: 15px; margin-bottom: 3px; }
+    .pdf-service-note { font-style: italic; font-size: 11px; color: #999; margin-top: 5px; }
+
+    .pdf-fee { margin: 30px 0; }
+    .pdf-fee-label { font-size: 18px; font-weight: 600; }
+    .pdf-fee-amount { font-size: 32px; font-weight: 700; color: #F5CB5C; }
+    .pdf-fee-note { font-size: 11px; color: #666; font-style: italic; margin-top: 10px; }
+
+    .pdf-terms { margin-top: 40px; padding-top: 30px; border-top: 1px solid #eee; }
+    .pdf-terms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; font-size: 10px; line-height: 1.6; color: #666; }
+    .pdf-term-section h4 { font-size: 11px; font-weight: 700; color: #000; margin-bottom: 8px; }
+
+    .pdf-signature { margin-top: 40px; padding-top: 30px; border-top: 1px solid #eee; }
+    .pdf-sig-row { display: flex; gap: 30px; margin-bottom: 20px; }
+    .pdf-sig-field { flex: 1; }
+    .pdf-sig-line { border-bottom: 1px solid #000; height: 40px; margin-bottom: 5px; }
+    .pdf-sig-label { font-size: 10px; color: #666; }
+
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal { background: #fff; border-radius: 12px; max-width: 900px; width: 90%; max-height: 90vh; overflow: auto; }
+    .modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 20px; }
+    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; }
+
+    .checkbox-wrapper { display: flex; align-items: center; gap: 8px; }
+    .checkbox-wrapper input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+
+    /* Editable fields in review */
+    .editable-section { margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+    .editable-section h3 { margin-bottom: 15px; font-size: 16px; }
+    .editable-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+    .editable-row.full { grid-template-columns: 1fr; }
+    .editable-field label { display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px; text-transform: uppercase; }
+    .editable-field input, .editable-field textarea {
+      width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;
+    }
+    .editable-field textarea { min-height: 60px; resize: vertical; }
+
+    .section-divider {
+      border: none; border-top: 2px solid #eee; margin: 30px 0;
+    }
+
+    .no-recommendation {
+      background: #f9f9f9; border: 2px dashed #ddd; border-radius: 12px;
+      padding: 30px; text-align: center; margin-top: 30px; color: #666;
+    }
+
+    @media (max-width: 1024px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .summary-section { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // Data Configuration
+    const HOURLY_RATE = 195;
+    const TECH_FEE = 299;
+
+    const MEDIA_TIERS = [
+      { id: 'under10k', label: 'Less than $10k/mo', fee: 100 },
+      { id: '10k-25k', label: '$10k - $25k/mo', fee: 175 },
+      { id: '25k-50k', label: '$25k - $50k/mo', fee: 225 },
+      { id: '50k-75k', label: '$50k - $75k/mo', fee: 300 },
+      { id: '75k-150k', label: '$75k - $150k/mo', fee: 500 },
+      { id: '150k-500k', label: '$150k - $500k/mo', fee: 1000 },
+      { id: '500k-750k', label: '$500k - $750k/mo', fee: 1500 },
+      { id: '750k-1m', label: '$750k - $1.0mil/mo', fee: 2000 },
+    ];
+
+    const BRICKS = {
+      kickoff: {
+        name: 'Kickoff & Measurement Plan',
+        desc: 'Review project timeline, objectives, audience insights, goals and team roles. Measurement plan to inform client dashboard and quarterly reporting template.',
+        note: '*Does not include conversion validation or implementation',
+        defaultHours: { mo1: 37, mo2: 0, mo3: 0, mo4: 0, mo5: 0 },
+        category: 'setup'
+      },
+      keywordAnalysis: {
+        name: 'Keyword Analysis',
+        desc: 'Generate keyword list. Prioritize topic hierarchy clusters based on relevancy, volume and competition. Set competitive benchmarks - kw number, volume, CPC of keywords.',
+        defaultHours: { mo1: 50, mo2: 0, mo3: 0, mo4: 0, mo5: 0 },
+        category: 'seo'
+      },
+      digitalAdCreative: {
+        name: 'Digital Ad Creation & Landing Page Creative',
+        desc: 'Audit & plan for creation & testing of ad copy and visual assets based on campaign plan. Landing page copy and visual asset optimization.',
+        note: '*New content creation and landing page implementation to be estimated separately.',
+        defaultHours: { mo1: 0, mo2: 50, mo3: 50, mo4: 0, mo5: 25 },
+        category: 'creative'
+      },
+      channelStrategy: {
+        name: 'Channel Strategy, Campaign Setup',
+        desc: 'Deliver playbook with audience targeting, messaging strategy, flighting sequence, engagement metric benchmarks, goals & budget allocation. Set up campaigns and measurement for launch.',
+        channels: ['Search', 'Social', 'Display', 'Programmatic'],
+        defaultHours: { mo1: 0, mo2: 50, mo3: 0, mo4: 0, mo5: 0 },
+        category: 'strategy'
+      },
+      monthlyManagement: {
+        name: 'Monthly Management & Optimization',
+        desc: 'Daily/weekly optimization of campaign performance (audience, bids, copy edits, negative kw, geographic). Bi-weekly/monthly discussion of progress & priorities. Real-time access to live dashboard + Quarterly all-hands indepth reporting.',
+        note: '*Media cost not included - billed directly from platform to client with no markup.',
+        defaultHours: { mo1: 8, mo2: 8, mo3: 28, mo4: 28, mo5: 28 },
+        category: 'management'
+      },
+      discoverability: {
+        name: 'Discoverability & Conversion: Monthly Optimization',
+        desc: 'Inbound visibility across search (Google/Bing), user-generated (Reddit, YouTube, reviews), and AI assistants. On-site conversion rate optimization to increase goal completion.',
+        defaultHours: { mo1: 30, mo2: 30, mo3: 30, mo4: 30, mo5: 30 },
+        category: 'seo'
+      },
+      creativeExecution: {
+        name: 'Monthly Creative Execution',
+        desc: 'Concept, design and copywriting based on client-provided brand direction. Deliver production-ready creative files (may include video, photo, audio, print, OOH, collateral, tradeshow).',
+        note: '*Uses existing visual assets. Hard costs for new photo or video creation billed direct.',
+        defaultHours: { mo1: 50, mo2: 50, mo3: 50, mo4: 50, mo5: 50 },
+        category: 'creative'
+      },
+      organicSocialPlaybook: {
+        name: 'Organic Social Media Playbook',
+        desc: 'Analyze existing social efforts against competitors. Develop editorial strategy for up to 4 channels: Facebook, Instagram, Twitter, and LinkedIn.',
+        defaultHours: { mo1: 75, mo2: 0, mo3: 0, mo4: 0, mo5: 0 },
+        category: 'social'
+      },
+      socialContent: {
+        name: 'Social Content Creation: Visuals & Writing',
+        desc: 'Deliver visual infographics, stylized images, typography/designs and writing for foundational organic and paid social media for 4 channels.',
+        note: '*Content posting and social media community engagement to be led by client team',
+        defaultHours: { mo1: 0, mo2: 33, mo3: 33, mo4: 33, mo5: 33 },
+        category: 'social'
+      },
+      contentStrategy: {
+        name: 'Content Strategy & Editorial Calendar',
+        desc: 'Develop content strategy and editorial calendar aligned with business objectives and audience needs.',
+        defaultHours: { mo1: 0, mo2: 0, mo3: 0, mo4: 0, mo5: 0 },
+        category: 'strategy'
+      }
+    };
+
+    const KITS = [
+      {
+        id: 'acquisition',
+        name: 'Acquisition only - SEM+SEO+CRO+Analytics',
+        desc: 'Focus on paid search, organic search, and conversion rate optimization',
+        bricks: ['kickoff', 'keywordAnalysis', 'channelStrategy', 'monthlyManagement', 'discoverability'],
+        channels: ['Search'],
+        // Matches: paidSearch + SEO
+        matchServices: ['paidSearch', 'seo']
+      },
+      {
+        id: 'awareness',
+        name: 'Awareness only - Creative+Paid Social, Prog, CTV',
+        desc: 'Focus on brand awareness through social, programmatic, and connected TV',
+        bricks: ['kickoff', 'keywordAnalysis', 'digitalAdCreative', 'channelStrategy', 'monthlyManagement'],
+        channels: ['Social', 'Display', 'Programmatic'],
+        // Matches: paidAwareness + creative
+        matchServices: ['paidAwareness', 'creative']
+      },
+      {
+        id: 'step1plus2',
+        name: 'Step 1+2 - Acquisition+Awareness - Paid + Creative + SEO',
+        desc: 'Combined acquisition and awareness campaigns with creative services',
+        bricks: ['kickoff', 'keywordAnalysis', 'digitalAdCreative', 'channelStrategy', 'monthlyManagement', 'discoverability'],
+        channels: ['Search', 'Social', 'Display', 'Programmatic'],
+        // Matches: paidSearch + SEO + paidAwareness OR paidSearch + SEO + creative
+        matchServices: ['paidSearch', 'seo', 'paidAwareness']
+      },
+      {
+        id: 'kitchenSink',
+        name: 'Step 1+2+3 - Kitchen Sink (Full Service)',
+        desc: 'Complete marketing solution including acquisition, awareness, and conversion support',
+        bricks: ['kickoff', 'keywordAnalysis', 'digitalAdCreative', 'channelStrategy', 'monthlyManagement', 'discoverability', 'creativeExecution'],
+        channels: ['Search', 'Social', 'Display', 'Programmatic'],
+        // Matches: all services or paidSearch + SEO + paidAwareness + creative
+        matchServices: ['paidSearch', 'seo', 'paidAwareness', 'creative']
+      },
+      {
+        id: 'paidMediaCreative',
+        name: 'Paid Media + Creative',
+        desc: 'Paid media management with creative development',
+        bricks: ['kickoff', 'keywordAnalysis', 'digitalAdCreative', 'channelStrategy', 'monthlyManagement'],
+        channels: ['Search', 'Social', 'Display', 'Programmatic'],
+        // Matches: paidSearch + creative OR paidAwareness + paidSearch
+        matchServices: ['paidSearch', 'creative']
+      },
+      {
+        id: 'ownedCreative',
+        name: 'Owned Media: Creative-only (Enterprise)',
+        desc: 'Focus on owned media creative development and execution',
+        bricks: ['kickoff', 'keywordAnalysis', 'digitalAdCreative', 'creativeExecution'],
+        channels: [],
+        // Matches: creative only
+        matchServices: ['creative']
+      },
+      {
+        id: 'ownedSEO',
+        name: 'Owned Media: Discoverability - SEO+CRO (Enterprise)',
+        desc: 'Focus on organic search visibility and conversion optimization',
+        bricks: ['kickoff', 'keywordAnalysis', 'contentStrategy', 'discoverability'],
+        channels: [],
+        // Matches: SEO only
+        matchServices: ['seo']
+      },
+      {
+        id: 'organicSocial',
+        name: 'Organic Social - Add-on',
+        desc: 'Organic social media strategy and content creation (not standalone)',
+        bricks: ['organicSocialPlaybook', 'socialContent'],
+        channels: [],
+        // Matches: other (social)
+        matchServices: ['other']
+      }
+    ];
+
+    // Service options for intake
+    const SERVICE_OPTIONS = [
+      { id: 'paidSearch', label: 'Paid Search', desc: 'SEM, Google Ads, Bing Ads' },
+      { id: 'seo', label: 'SEO', desc: 'Organic search, CRO, discoverability' },
+      { id: 'paidAwareness', label: 'Paid Awareness', desc: 'Social ads, programmatic, CTV' },
+      { id: 'creative', label: 'Creative', desc: 'Digital ad creation, landing pages' },
+      { id: 'other', label: 'Other', desc: 'Organic social, custom services' },
+    ];
+
+    // Function to recommend a kit based on selected services
+    function getRecommendedKit(selectedServices) {
+      if (selectedServices.length === 0) return null;
+
+      const selected = new Set(selectedServices);
+
+      // If ONLY "other" is selected, return null for custom build
+      if (selected.size === 1 && selected.has('other')) {
+        return null;
+      }
+
+      // Scoring logic - find the kit that best matches
+      let bestKit = null;
+      let bestScore = -1;
+
+      for (const kit of KITS) {
+        const kitServices = new Set(kit.matchServices);
+
+        // Calculate match score
+        let matchCount = 0;
+        let extraCount = 0;
+
+        for (const service of selected) {
+          if (kitServices.has(service)) {
+            matchCount++;
+          }
+        }
+
+        for (const service of kitServices) {
+          if (!selected.has(service)) {
+            extraCount++;
+          }
+        }
+
+        // Score = matches - (extras * 0.5) - need all selected to be covered
+        const coversAll = [...selected].every(s => kitServices.has(s) || s === 'other');
+        const score = coversAll ? (matchCount * 2) - extraCount : -100;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestKit = kit;
+        }
+      }
+
+      // Special case handling
+      if (selected.has('paidSearch') && selected.has('seo') && !selected.has('paidAwareness') && !selected.has('creative')) {
+        return KITS.find(k => k.id === 'acquisition');
+      }
+
+      if (selected.has('paidAwareness') && selected.has('creative') && !selected.has('paidSearch') && !selected.has('seo')) {
+        return KITS.find(k => k.id === 'awareness');
+      }
+
+      if (selected.size === 1 && selected.has('seo')) {
+        return KITS.find(k => k.id === 'ownedSEO');
+      }
+
+      if (selected.size === 1 && selected.has('creative')) {
+        return KITS.find(k => k.id === 'ownedCreative');
+      }
+
+      if (selected.size === 1 && selected.has('paidSearch')) {
+        return KITS.find(k => k.id === 'acquisition');
+      }
+
+      if (selected.size === 1 && selected.has('paidAwareness')) {
+        return KITS.find(k => k.id === 'awareness');
+      }
+
+      if (selected.has('paidSearch') && selected.has('seo') && (selected.has('paidAwareness') || selected.has('creative'))) {
+        if (selected.has('paidAwareness') && selected.has('creative')) {
+          return KITS.find(k => k.id === 'kitchenSink');
+        }
+        return KITS.find(k => k.id === 'step1plus2');
+      }
+
+      if (selected.has('paidSearch') && selected.has('creative') && !selected.has('seo')) {
+        return KITS.find(k => k.id === 'paidMediaCreative');
+      }
+
+      return bestKit;
+    }
+
+    // Check if this is a custom build (only "other" selected)
+    function isCustomBuild(selectedServices) {
+      return selectedServices.length === 1 && selectedServices.includes('other');
+    }
+
+    // Get add-on bricks not in the recommended kit (or all bricks for custom build)
+    function getAvailableAddons(kitId, isCustom) {
+      // For custom build, return all bricks
+      if (isCustom) {
+        return Object.entries(BRICKS)
+          .map(([id, brick]) => ({ id, ...brick }));
+      }
+
+      if (!kitId) return [];
+      const kit = KITS.find(k => k.id === kitId);
+      if (!kit) return [];
+
+      const kitBricks = new Set(kit.bricks);
+      return Object.entries(BRICKS)
+        .filter(([id]) => !kitBricks.has(id))
+        .map(([id, brick]) => ({ id, ...brick }));
+    }
+
+    // Main App Component
+    function App() {
+      const [activeTab, setActiveTab] = useState('intake');
+      const [clientInfo, setClientInfo] = useState({
+        name: '',
+        date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        mission: '',
+        industries: '',
+        decisionMakers: '',
+        solution: '',
+        funnelFlow: '',
+        milestones: ''
+      });
+      const [selectedServices, setSelectedServices] = useState([]);
+      const [selectedAddons, setSelectedAddons] = useState([]);
+      const [selectedKit, setSelectedKit] = useState(null);
+      const [selectedBricks, setSelectedBricks] = useState({});
+      const [brickHours, setBrickHours] = useState({});
+      const [selectedMediaTier, setSelectedMediaTier] = useState('25k-50k');
+      const [includeTechFee, setIncludeTechFee] = useState(true);
+      const [selectedChannels, setSelectedChannels] = useState(['Search', 'Social', 'Display', 'Programmatic']);
+
+      const recommendedKit = getRecommendedKit(selectedServices);
+      const customBuild = isCustomBuild(selectedServices);
+      const availableAddons = getAvailableAddons(recommendedKit?.id, customBuild);
+
+      // Toggle service selection
+      const toggleService = (serviceId) => {
+        setSelectedServices(prev =>
+          prev.includes(serviceId)
+            ? prev.filter(s => s !== serviceId)
+            : [...prev, serviceId]
+        );
+        setSelectedAddons([]); // Reset addons when services change
+      };
+
+      // Toggle addon selection
+      const toggleAddon = (addonId) => {
+        setSelectedAddons(prev =>
+          prev.includes(addonId)
+            ? prev.filter(a => a !== addonId)
+            : [...prev, addonId]
+        );
+      };
+
+      // Proceed with recommended kit
+      const proceedWithKit = () => {
+        if (!recommendedKit) return;
+
+        setSelectedKit(recommendedKit.id);
+
+        // Initialize bricks from kit + addons
+        const newBricks = {};
+        const newHours = {};
+
+        recommendedKit.bricks.forEach(brickId => {
+          newBricks[brickId] = true;
+          newHours[brickId] = { ...BRICKS[brickId].defaultHours };
+        });
+
+        selectedAddons.forEach(addonId => {
+          newBricks[addonId] = true;
+          newHours[addonId] = { ...BRICKS[addonId].defaultHours };
+        });
+
+        setSelectedBricks(newBricks);
+        setBrickHours(newHours);
+        setSelectedChannels(recommendedKit.channels || []);
+        setActiveTab('configure');
+      };
+
+      // Proceed with custom build (only selected addons, no kit)
+      const proceedWithCustomBuild = () => {
+        if (selectedAddons.length === 0) return;
+
+        setSelectedKit('custom'); // Use 'custom' as a special kit ID
+
+        // Initialize bricks from selected addons only
+        const newBricks = {};
+        const newHours = {};
+
+        selectedAddons.forEach(addonId => {
+          newBricks[addonId] = true;
+          newHours[addonId] = { ...BRICKS[addonId].defaultHours };
+        });
+
+        setSelectedBricks(newBricks);
+        setBrickHours(newHours);
+        setSelectedChannels([]);
+        setActiveTab('configure');
+      };
+
+      // Initialize brick hours when kit changes manually
+      useEffect(() => {
+        if (selectedKit && activeTab === 'configure') {
+          // Skip initialization for custom builds - they're already set up by proceedWithCustomBuild
+          if (selectedKit === 'custom') return;
+
+          const kit = KITS.find(k => k.id === selectedKit);
+          if (kit && Object.keys(selectedBricks).length === 0) {
+            const newBricks = {};
+            const newHours = {};
+
+            kit.bricks.forEach(brickId => {
+              newBricks[brickId] = true;
+              newHours[brickId] = { ...BRICKS[brickId].defaultHours };
+            });
+
+            setSelectedBricks(newBricks);
+            setBrickHours(newHours);
+            setSelectedChannels(kit.channels || []);
+          }
+        }
+      }, [selectedKit, activeTab]);
+
+      const toggleBrick = (brickId) => {
+        setSelectedBricks(prev => ({
+          ...prev,
+          [brickId]: !prev[brickId]
+        }));
+
+        if (!selectedBricks[brickId]) {
+          setBrickHours(prev => ({
+            ...prev,
+            [brickId]: { ...BRICKS[brickId].defaultHours }
+          }));
+        }
+      };
+
+      const updateBrickHours = (brickId, month, value) => {
+        setBrickHours(prev => ({
+          ...prev,
+          [brickId]: {
+            ...prev[brickId],
+            [month]: parseInt(value) || 0
+          }
+        }));
+      };
+
+      const calculateTotals = () => {
+        let monthlyHours = { mo1: 0, mo2: 0, mo3: 0, mo4: 0, mo5: 0 };
+
+        Object.entries(selectedBricks).forEach(([brickId, included]) => {
+          if (included && brickHours[brickId]) {
+            Object.keys(monthlyHours).forEach(month => {
+              monthlyHours[month] += brickHours[brickId][month] || 0;
+            });
+          }
+        });
+
+        const monthlyFees = {};
+        const mediaTier = MEDIA_TIERS.find(t => t.id === selectedMediaTier);
+        const techFee = includeTechFee ? TECH_FEE : 0;
+
+        Object.keys(monthlyHours).forEach(month => {
+          const serviceFee = monthlyHours[month] * HOURLY_RATE;
+          monthlyFees[month] = serviceFee + techFee;
+        });
+
+        const ongoingMonths = ['mo2', 'mo3', 'mo4', 'mo5'];
+        const avgOngoing = ongoingMonths.reduce((sum, m) => sum + monthlyFees[m], 0) / ongoingMonths.length;
+
+        return {
+          monthlyHours,
+          monthlyFees,
+          techFee,
+          avgOngoingFee: Math.round(avgOngoing),
+          firstMonthFee: monthlyFees.mo1
+        };
+      };
+
+      const totals = calculateTotals();
+
+      const exportPDF = () => {
+        const element = document.getElementById('pdf-content');
+        const opt = {
+          margin: [0.5, 0.5],
+          filename: `${clientInfo.name || 'Client'}-SOW-${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save();
+      };
+
+      const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(amount));
+      };
+
+      const canProceedToConfig = clientInfo.name && recommendedKit;
+
+      return (
+        <div className="app-container">
+          <header className="header">
+            <h1>Native Digital</h1>
+            <p>SOW Cost Estimator</p>
+          </header>
+
+          <div className="tabs">
+            <div
+              className={`tab ${activeTab === 'intake' ? 'active' : ''}`}
+              onClick={() => setActiveTab('intake')}
+            >
+              1. Client Intake
+            </div>
+            <div
+              className={`tab ${activeTab === 'configure' ? 'active' : ''} ${!selectedKit ? 'disabled' : ''}`}
+              onClick={() => selectedKit && setActiveTab('configure')}
+            >
+              2. Configure Services
+            </div>
+            <div
+              className={`tab ${activeTab === 'review' ? 'active' : ''} ${!selectedKit ? 'disabled' : ''}`}
+              onClick={() => selectedKit && setActiveTab('review')}
+            >
+              3. Review & Export
+            </div>
+          </div>
+
+          {/* STEP 1: CLIENT INTAKE */}
+          {activeTab === 'intake' && (
+            <div className="main-grid">
+              <div className="panel">
+                <div className="panel-header">
+                  <h2>Client Information</h2>
+                </div>
+                <div className="panel-body">
+                  <div className="form-group">
+                    <label>Client Name *</label>
+                    <input
+                      type="text"
+                      value={clientInfo.name}
+                      onChange={(e) => setClientInfo({...clientInfo, name: e.target.value})}
+                      placeholder="e.g., Lectric, Mint Mobile, GoPro"
+                    />
+                  </div>
+
+                  <hr className="section-divider" />
+
+                  <div className="form-group">
+                    <label>What services are you wanting to estimate?</label>
+                    <p style={{ fontSize: 12, color: '#666', marginBottom: 10 }}>Select all that apply</p>
+                    <div className="service-toggles">
+                      {SERVICE_OPTIONS.map(service => (
+                        <div
+                          key={service.id}
+                          className={`service-toggle ${selectedServices.includes(service.id) ? 'active' : ''}`}
+                          onClick={() => toggleService(service.id)}
+                        >
+                          {service.label}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {recommendedKit && (
+                    <div className="recommendation-card">
+                      <h3>✓ Recommended Kit</h3>
+                      <div className="kit-name">{recommendedKit.name}</div>
+                      <div className="kit-desc">{recommendedKit.desc}</div>
+                      <div className="included-services">
+                        <h4>Included Services</h4>
+                        {recommendedKit.bricks.map(brickId => (
+                          <span key={brickId} className="service-tag">{BRICKS[brickId].name}</span>
+                        ))}
+                      </div>
+
+                      <div className="btn-group" style={{ marginTop: 20 }}>
+                        <button
+                          className="btn btn-success"
+                          onClick={proceedWithKit}
+                          disabled={!clientInfo.name}
+                        >
+                          Proceed with This Kit →
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {customBuild && (
+                    <div className="recommendation-card" style={{ background: 'linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%)', borderColor: '#F5CB5C' }}>
+                      <h3 style={{ color: '#B8860B' }}>🛠 Custom Build</h3>
+                      <div className="kit-name">Build Your Own Scope</div>
+                      <div className="kit-desc">Select individual services from the add-ons panel to create a custom scope of work tailored to your specific needs.</div>
+
+                      <div className="btn-group" style={{ marginTop: 20 }}>
+                        <button
+                          className="btn btn-primary"
+                          onClick={proceedWithCustomBuild}
+                          disabled={!clientInfo.name || selectedAddons.length === 0}
+                        >
+                          Proceed with Custom Build →
+                        </button>
+                      </div>
+                      {selectedAddons.length === 0 && (
+                        <p style={{ fontSize: 12, color: '#666', marginTop: 10 }}>Select at least one service from the add-ons panel to proceed.</p>
+                      )}
+                    </div>
+                  )}
+
+                  {selectedServices.length > 0 && !recommendedKit && !customBuild && (
+                    <div className="no-recommendation">
+                      <p>No exact kit match found. Please adjust your selections or proceed to configure services manually.</p>
+                    </div>
+                  )}
+
+                  {selectedServices.length === 0 && (
+                    <div className="no-recommendation">
+                      <p>Select services above to see a recommended kit.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="panel">
+                <div className="panel-header">
+                  <h2>{customBuild ? 'Select Services' : 'Optional Add-ons'}</h2>
+                </div>
+                <div className="panel-body">
+                  {customBuild ? (
+                    <>
+                      <p style={{ fontSize: 13, color: '#666', marginBottom: 15 }}>
+                        Select the services you want to include in your custom scope:
+                      </p>
+                      {availableAddons.map(addon => (
+                        <div
+                          key={addon.id}
+                          className={`addon-item ${selectedAddons.includes(addon.id) ? 'selected' : ''}`}
+                          onClick={() => toggleAddon(addon.id)}
+                        >
+                          <div className="addon-info">
+                            <div className="addon-name">{addon.name}</div>
+                            <div className="addon-desc">{addon.desc.substring(0, 80)}...</div>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={selectedAddons.includes(addon.id)}
+                            onChange={() => toggleAddon(addon.id)}
+                          />
+                        </div>
+                      ))}
+                    </>
+                  ) : recommendedKit ? (
+                    <>
+                      <p style={{ fontSize: 13, color: '#666', marginBottom: 15 }}>
+                        These services are not included in the recommended kit but can be added:
+                      </p>
+                      {availableAddons.length > 0 ? (
+                        availableAddons.map(addon => (
+                          <div
+                            key={addon.id}
+                            className={`addon-item ${selectedAddons.includes(addon.id) ? 'selected' : ''}`}
+                            onClick={() => toggleAddon(addon.id)}
+                          >
+                            <div className="addon-info">
+                              <div className="addon-name">{addon.name}</div>
+                              <div className="addon-desc">{addon.desc.substring(0, 80)}...</div>
+                            </div>
+                            <input
+                              type="checkbox"
+                              checked={selectedAddons.includes(addon.id)}
+                              onChange={() => toggleAddon(addon.id)}
+                            />
+                          </div>
+                        ))
+                      ) : (
+                        <p style={{ color: '#999' }}>All services are included in the recommended kit.</p>
+                      )}
+                    </>
+                  ) : (
+                    <p style={{ color: '#999' }}>Select services to see available add-ons.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2: CONFIGURE SERVICES */}
+          {activeTab === 'configure' && (
+            <div className="main-grid">
+              <div className="panel">
+                <div className="panel-header">
+                  <h2>Selected Kit: {selectedKit === 'custom' ? 'Custom Build' : KITS.find(k => k.id === selectedKit)?.name}</h2>
+                </div>
+                <div className="panel-body">
+                  <div className="form-group">
+                    <label>Or choose a different kit:</label>
+                    <div className="kit-selector">
+                      {KITS.map(kit => (
+                        <div
+                          key={kit.id}
+                          className={`kit-option ${selectedKit === kit.id ? 'selected' : ''} ${recommendedKit?.id === kit.id ? 'recommended' : ''}`}
+                          onClick={() => {
+                            setSelectedKit(kit.id);
+                            const newBricks = {};
+                            const newHours = {};
+                            kit.bricks.forEach(brickId => {
+                              newBricks[brickId] = true;
+                              newHours[brickId] = { ...BRICKS[brickId].defaultHours };
+                            });
+                            setSelectedBricks(newBricks);
+                            setBrickHours(newHours);
+                            setSelectedChannels(kit.channels || []);
+                          }}
+                        >
+                          <h3>
+                            {kit.name}
+                            {recommendedKit?.id === kit.id && <span className="recommended-badge">Recommended</span>}
+                          </h3>
+                          <p>{kit.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ marginTop: 20 }}>
+                    <label>Media Spend Tier</label>
+                    <select
+                      value={selectedMediaTier}
+                      onChange={(e) => setSelectedMediaTier(e.target.value)}
+                    >
+                      {MEDIA_TIERS.map(tier => (
+                        <option key={tier.id} value={tier.id}>
+                          {tier.label} (+{formatCurrency(tier.fee)}/mo)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="checkbox-wrapper" style={{ marginTop: 15 }}>
+                    <input
+                      type="checkbox"
+                      id="techFee"
+                      checked={includeTechFee}
+                      onChange={(e) => setIncludeTechFee(e.target.checked)}
+                    />
+                    <label htmlFor="techFee">Include Tech Fee (+$299/mo for software licenses & tools)</label>
+                  </div>
+
+                  <h3 style={{ marginTop: 30, marginBottom: 15 }}>Customize Services (Bricks)</h3>
+                  <div className="brick-list">
+                    {Object.entries(BRICKS).map(([brickId, brick]) => (
+                      <div
+                        key={brickId}
+                        className={`brick-item ${selectedBricks[brickId] ? 'included' : 'excluded'}`}
+                      >
+                        <div className="brick-info">
+                          <div className="brick-name">{brick.name}</div>
+                          <div className="brick-desc">{brick.desc.substring(0, 100)}...</div>
+                        </div>
+                        <div className="brick-toggle">
+                          <input
+                            type="checkbox"
+                            checked={selectedBricks[brickId] || false}
+                            onChange={() => toggleBrick(brickId)}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="panel summary-section">
+                <div className="panel-header">
+                  <h2>Cost Summary</h2>
+                </div>
+                <div className="panel-body">
+                  <h4 style={{ marginBottom: 15 }}>Monthly Hours by Service</h4>
+                  {Object.entries(selectedBricks).filter(([_, included]) => included).map(([brickId]) => (
+                    <div key={brickId} style={{ marginBottom: 15 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>{BRICKS[brickId].name}</div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {['mo1', 'mo2', 'mo3', 'mo4', 'mo5'].map(month => (
+                          <div key={month} style={{ flex: 1 }}>
+                            <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>
+                              {month.replace('mo', 'Mo ')}
+                            </div>
+                            <input
+                              type="number"
+                              min="0"
+                              value={brickHours[brickId]?.[month] || 0}
+                              onChange={(e) => updateBrickHours(brickId, month, e.target.value)}
+                              style={{ width: '100%', padding: 8, textAlign: 'center' }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div style={{ marginTop: 30, paddingTop: 20, borderTop: '2px solid #eee' }}>
+                    <h4 style={{ marginBottom: 15 }}>Monthly Fee Breakdown</h4>
+                    {['mo1', 'mo2', 'mo3', 'mo4', 'mo5'].map(month => (
+                      <div className="summary-row" key={month}>
+                        <span className="label">Month {month.replace('mo', '')}</span>
+                        <span>{formatCurrency(totals.monthlyFees[month])}</span>
+                      </div>
+                    ))}
+                    <div className="summary-row">
+                      <span className="label">Tech Fee (per month)</span>
+                      <span>{includeTechFee ? formatCurrency(TECH_FEE) : '$0'}</span>
+                    </div>
+                    <div className="summary-row total">
+                      <span className="label">Avg Ongoing Monthly Fee</span>
+                      <span>{formatCurrency(totals.avgOngoingFee)}</span>
+                    </div>
+                  </div>
+
+                  <div className="btn-group">
+                    <button className="btn btn-outline" onClick={() => setActiveTab('intake')}>
+                      ← Back
+                    </button>
+                    <button className="btn btn-primary" onClick={() => setActiveTab('review')}>
+                      Next: Review & Export →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3: REVIEW & EXPORT */}
+          {activeTab === 'review' && (
+            <div>
+              <div className="panel" style={{ marginBottom: 20 }}>
+                <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h2>SOW Preview</h2>
+                  <div className="btn-group" style={{ margin: 0 }}>
+                    <button className="btn btn-outline" onClick={() => setActiveTab('configure')}>
+                      ← Edit Services
+                    </button>
+                    <button className="btn btn-primary" onClick={exportPDF}>
+                      Export to PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Editable Client Details Section */}
+              <div className="editable-section">
+                <h3>Client Details (Edit below - these will appear in the PDF)</h3>
+                <div className="editable-row">
+                  <div className="editable-field">
+                    <label>Client Name *</label>
+                    <input
+                      type="text"
+                      value={clientInfo.name}
+                      onChange={(e) => setClientInfo({...clientInfo, name: e.target.value})}
+                      placeholder="e.g., Lectric, Mint Mobile, GoPro"
+                    />
+                  </div>
+                  <div className="editable-field">
+                    <label>SOW Date</label>
+                    <input
+                      type="text"
+                      value={clientInfo.date}
+                      onChange={(e) => setClientInfo({...clientInfo, date: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="editable-row full">
+                  <div className="editable-field">
+                    <label>Mission Statement</label>
+                    <textarea
+                      value={clientInfo.mission}
+                      onChange={(e) => setClientInfo({...clientInfo, mission: e.target.value})}
+                      placeholder="e.g., Lead Demand Generation and support growth initiatives for Imubit."
+                    />
+                  </div>
+                </div>
+                <div className="editable-row">
+                  <div className="editable-field">
+                    <label>Industries</label>
+                    <input
+                      type="text"
+                      value={clientInfo.industries}
+                      onChange={(e) => setClientInfo({...clientInfo, industries: e.target.value})}
+                      placeholder="e.g., Oil & gas refining, petrochemicals, chemicals"
+                    />
+                  </div>
+                  <div className="editable-field">
+                    <label>Funnel Flow</label>
+                    <input
+                      type="text"
+                      value={clientInfo.funnelFlow}
+                      onChange={(e) => setClientInfo({...clientInfo, funnelFlow: e.target.value})}
+                      placeholder="e.g., Paid → Content → Demo/Webinar"
+                    />
+                  </div>
+                </div>
+                <div className="editable-row">
+                  <div className="editable-field">
+                    <label>Decision Makers</label>
+                    <textarea
+                      value={clientInfo.decisionMakers}
+                      onChange={(e) => setClientInfo({...clientInfo, decisionMakers: e.target.value})}
+                      placeholder="e.g., Executives concerned with staffing turnover. Process Control Engineers concerned with models."
+                    />
+                  </div>
+                  <div className="editable-field">
+                    <label>Solution</label>
+                    <textarea
+                      value={clientInfo.solution}
+                      onChange={(e) => setClientInfo({...clientInfo, solution: e.target.value})}
+                      placeholder="Describe the client's solution/product..."
+                    />
+                  </div>
+                </div>
+                <div className="editable-row full">
+                  <div className="editable-field">
+                    <label>Milestones</label>
+                    <textarea
+                      value={clientInfo.milestones}
+                      onChange={(e) => setClientInfo({...clientInfo, milestones: e.target.value})}
+                      placeholder="e.g., Soft launch in February 2026."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* PDF Content */}
+              <div id="pdf-content">
+                <div className="pdf-header">
+                  <div className="pdf-logo">Native Digital</div>
+                  <div className="pdf-title">SCOPE OF WORK</div>
+                  <div className="pdf-client">{clientInfo.name || '[Client Name]'}</div>
+                  <div className="pdf-date">{clientInfo.date}</div>
+                </div>
+
+                {clientInfo.mission && (
+                  <div className="pdf-mission">
+                    <span>{clientInfo.mission.split(' ').slice(0, 4).join(' ')}</span>{' '}
+                    {clientInfo.mission.split(' ').slice(4).join(' ')}
+                  </div>
+                )}
+
+                <div className="pdf-details">
+                  {clientInfo.industries && (
+                    <div className="pdf-detail-row">
+                      <div className="pdf-detail-label">Industries</div>
+                      <div className="pdf-detail-value">{clientInfo.industries}</div>
+                    </div>
+                  )}
+                  {clientInfo.decisionMakers && (
+                    <div className="pdf-detail-row">
+                      <div className="pdf-detail-label">Decision Makers</div>
+                      <div className="pdf-detail-value">{clientInfo.decisionMakers}</div>
+                    </div>
+                  )}
+                  {clientInfo.solution && (
+                    <div className="pdf-detail-row">
+                      <div className="pdf-detail-label">Solution</div>
+                      <div className="pdf-detail-value">{clientInfo.solution}</div>
+                    </div>
+                  )}
+                  {clientInfo.funnelFlow && (
+                    <div className="pdf-detail-row">
+                      <div className="pdf-detail-label">Funnel Flow</div>
+                      <div className="pdf-detail-value">{clientInfo.funnelFlow}</div>
+                    </div>
+                  )}
+                  {clientInfo.milestones && (
+                    <div className="pdf-detail-row">
+                      <div className="pdf-detail-label">Milestones</div>
+                      <div className="pdf-detail-value">{clientInfo.milestones}</div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pdf-services">
+                  <div className="pdf-service-header">{clientInfo.name || 'Client'}</div>
+
+                  {Object.entries(selectedBricks).filter(([_, included]) => included).map(([brickId]) => {
+                    const brick = BRICKS[brickId];
+
+                    return (
+                      <div className="pdf-service-item" key={brickId}>
+                        <div className="pdf-service-name">
+                          {brick.name}
+                          {brick.channels && selectedChannels.length > 0 && (
+                            <span className="highlight"> ({selectedChannels.join(', ')})</span>
+                          )}
+                        </div>
+                        <div className="pdf-service-desc">
+                          {brick.desc.split('. ').map((sentence, i) => (
+                            <div key={i}>- {sentence}{sentence.endsWith('.') ? '' : '.'}</div>
+                          ))}
+                        </div>
+                        {brick.note && <div className="pdf-service-note">{brick.note}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="pdf-fee">
+                  <div className="pdf-fee-label">Monthly Fee</div>
+                  <div className="pdf-fee-amount">{formatCurrency(totals.avgOngoingFee)}/mo</div>
+                  <div className="pdf-fee-note">
+                    Total fee includes ${TECH_FEE}/mo for technology software licenses, platforms, and tools essential for maximizing campaign performance and data management.
+                    <br/><br/>
+                    *Not included: Identity Resolution to connect, unify, and activate customer data across channels. Data pricing to be provided based on usage requirements.
+                  </div>
+                </div>
+
+                <div className="pdf-terms">
+                  <div className="pdf-terms-grid">
+                    <div className="pdf-term-section">
+                      <h4>Ownership</h4>
+                      <p>Consultant will provide a finished product(s) to the Client in the form of digital documents and asset files. These files become the exclusive property of the Client upon acceptance of delivery.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Renewal</h4>
+                      <p>This Agreement shall remain in effect until terminated by either party as permitted herein. Ongoing monthly services auto-renew unless otherwise amended or terminated by Client or Consultant.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Response Time</h4>
+                      <p>Within the duration of this Agreement Consultant will make every effort to reply to inquiries within one (1) business days, except where Client has been previously notified of a period of limited availability.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Cancellation</h4>
+                      <p>Client may terminate this Agreement at any time by giving Consultant not less than 90 days' prior written notice.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Additional Services</h4>
+                      <p>Requests and revisions beyond what is detailed in this scope including technical support upon Client prior written approval will be billed at $195/hour.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Payment</h4>
+                      <p>Client shall pay Consultant for the first month invoice outlined in the scope, billed upon SOW signature and due prior to project kickoff. All payments are due within forty-five (45) days of billing.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pdf-signature">
+                  <p style={{ fontSize: 10, marginBottom: 20 }}>
+                    NATIVE DIGITAL LLC ("Consultant") and <strong>{clientInfo.name || '[Client]'}</strong> ("Client") agree to the following terms and conditions.
+                  </p>
+                  <div className="pdf-sig-row">
+                    <div className="pdf-sig-field">
+                      <div className="pdf-sig-line"></div>
+                      <div className="pdf-sig-label">Client Signature</div>
+                    </div>
+                    <div className="pdf-sig-field">
+                      <div className="pdf-sig-line"></div>
+                      <div className="pdf-sig-label">Printed Name</div>
+                    </div>
+                    <div className="pdf-sig-field" style={{ flex: 0.5 }}>
+                      <div className="pdf-sig-line"></div>
+                      <div className="pdf-sig-label">Date</div>
+                    </div>
+                  </div>
+                  <div className="pdf-sig-row">
+                    <div className="pdf-sig-field">
+                      <div className="pdf-sig-line"></div>
+                      <div className="pdf-sig-label">Accounts Payable Contact Name</div>
+                    </div>
+                    <div className="pdf-sig-field">
+                      <div className="pdf-sig-line"></div>
+                      <div className="pdf-sig-label">Email Address</div>
+                    </div>
+                  </div>
+                  <div className="pdf-sig-row">
+                    <div className="pdf-sig-field">
+                      <div className="pdf-sig-line"></div>
+                      <div className="pdf-sig-label">Native Digital, LLC</div>
+                    </div>
+                    <div className="pdf-sig-field">
+                      <div className="pdf-sig-line"></div>
+                      <div className="pdf-sig-label">Printed Name</div>
+                    </div>
+                    <div className="pdf-sig-field" style={{ flex: 0.5 }}>
+                      <div className="pdf-sig-line"></div>
+                      <div className="pdf-sig-label">Date</div>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 10, fontStyle: 'italic', marginTop: 20 }}>
+                    Once signed, your Account Manager will provide next steps and upcoming milestones.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
