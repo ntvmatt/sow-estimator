@@ -8,63 +8,78 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f5f5; color: #333; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #0a0a0a; color: #fff; }
 
     .app-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
 
-    .header { background: #fff; padding: 20px 30px; border-bottom: 3px solid #000; margin-bottom: 30px; }
-    .header h1 { font-size: 24px; font-weight: 600; }
-    .header p { color: #666; margin-top: 5px; }
+    .header { background: #0a0a0a; padding: 25px 30px; border-bottom: 1px solid #222; margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; }
+    .header-left { display: flex; align-items: center; gap: 20px; }
+    .header-logo {
+      font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
+      text-transform: uppercase; color: #fff;
+    }
+    .header-logo span { color: #fff; opacity: 0.5; font-weight: 400; margin-left: 8px; font-size: 14px; text-transform: none; }
+    .header h1 { font-size: 14px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+    .header p { color: #666; margin-top: 5px; display: none; }
 
     .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
 
-    .panel { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .panel-header { padding: 20px; border-bottom: 1px solid #eee; }
-    .panel-header h2 { font-size: 18px; font-weight: 600; }
-    .panel-body { padding: 20px; }
+    .panel { background: #111; border-radius: 12px; border: 1px solid #222; }
+    .panel-header { padding: 20px 25px; border-bottom: 1px solid #222; }
+    .panel-header h2 { font-size: 16px; font-weight: 600; color: #fff; }
+    .panel-body { padding: 25px; }
 
     .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; font-weight: 500; margin-bottom: 8px; font-size: 14px; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 8px; font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
     .form-group input, .form-group select, .form-group textarea {
-      width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;
-      font-size: 14px; transition: border-color 0.2s;
+      width: 100%; padding: 14px 16px; border: 1px solid #333; border-radius: 8px;
+      font-size: 14px; transition: all 0.2s; background: #0a0a0a; color: #fff;
+      font-family: 'Inter', sans-serif;
     }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-      outline: none; border-color: #F5CB5C;
+      outline: none; border-color: #fff; background: #111;
     }
+    .form-group input::placeholder { color: #555; }
     .form-group textarea { min-height: 80px; resize: vertical; }
+    .form-group select { cursor: pointer; }
+    .form-group select option { background: #111; color: #fff; }
 
     .kit-selector { display: grid; gap: 10px; }
     .kit-option {
-      padding: 15px; border: 2px solid #eee; border-radius: 8px; cursor: pointer;
-      transition: all 0.2s;
+      padding: 18px; border: 1px solid #333; border-radius: 10px; cursor: pointer;
+      transition: all 0.2s; background: #0a0a0a;
     }
-    .kit-option:hover { border-color: #F5CB5C; background: #fffef5; }
-    .kit-option.selected { border-color: #F5CB5C; background: #F5CB5C20; }
-    .kit-option.recommended { border-color: #4CAF50; background: #E8F5E9; }
-    .kit-option.recommended.selected { border-color: #F5CB5C; background: #F5CB5C20; }
-    .kit-option h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-    .kit-option p { font-size: 12px; color: #666; }
-    .kit-option .price { font-size: 16px; font-weight: 700; color: #000; margin-top: 8px; }
+    .kit-option:hover { border-color: #555; background: #151515; }
+    .kit-option.selected { border-color: #fff; background: #1a1a1a; }
+    .kit-option.recommended { border-color: #22c55e; background: rgba(34, 197, 94, 0.1); }
+    .kit-option.recommended.selected { border-color: #fff; background: #1a1a1a; }
+    .kit-option h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #fff; }
+    .kit-option p { font-size: 12px; color: #888; }
+    .kit-option .price { font-size: 18px; font-weight: 700; color: #fff; margin-top: 10px; }
     .kit-option .recommended-badge {
-      display: inline-block; background: #4CAF50; color: #fff; font-size: 10px;
-      padding: 3px 8px; border-radius: 10px; margin-left: 8px; font-weight: 600;
+      display: inline-block; background: #22c55e; color: #000; font-size: 10px;
+      padding: 4px 10px; border-radius: 20px; margin-left: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
     }
 
     .brick-list { margin-top: 20px; }
     .brick-item {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 15px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 8px;
+      padding: 14px 18px; border: 1px solid #333; border-radius: 8px; margin-bottom: 8px;
+      background: #0a0a0a; transition: all 0.2s;
     }
-    .brick-item.included { background: #f0fff0; border-color: #90EE90; }
-    .brick-item.excluded { background: #fff5f5; border-color: #ffcccc; opacity: 0.6; }
+    .brick-item:hover { border-color: #444; }
+    .brick-item.included { background: rgba(34, 197, 94, 0.1); border-color: #22c55e; }
+    .brick-item.excluded { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; opacity: 0.5; }
     .brick-info { flex: 1; }
-    .brick-name { font-weight: 500; font-size: 14px; }
-    .brick-desc { font-size: 11px; color: #666; margin-top: 2px; }
+    .brick-name { font-weight: 600; font-size: 14px; color: #fff; }
+    .brick-desc { font-size: 11px; color: #666; margin-top: 3px; }
     .brick-hours { display: flex; align-items: center; gap: 10px; }
-    .brick-hours input { width: 70px; text-align: center; padding: 8px; }
+    .brick-hours input { width: 70px; text-align: center; padding: 10px; background: #111; border-color: #333; color: #fff; }
     .brick-hours span { font-size: 12px; color: #666; }
     .brick-toggle { margin-left: 10px; }
 
@@ -72,98 +87,120 @@
 
     .collapsible-header {
       display: flex; align-items: center; justify-content: space-between;
-      cursor: pointer; padding: 12px 0; border-bottom: 1px solid #eee; margin-bottom: 15px;
+      cursor: pointer; padding: 14px 0; border-bottom: 1px solid #333; margin-bottom: 15px;
     }
-    .collapsible-header:hover { color: #F5CB5C; }
-    .collapsible-header h3 { margin: 0; font-size: 14px; font-weight: 600; }
+    .collapsible-header:hover { color: #fff; }
+    .collapsible-header:hover h3 { color: #fff; }
+    .collapsible-header h3 { margin: 0; font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; transition: color 0.2s; }
     .collapsible-header .toggle-icon { font-size: 12px; color: #666; transition: transform 0.2s; }
     .collapsible-header.open .toggle-icon { transform: rotate(180deg); }
     .collapsible-content { display: none; }
     .collapsible-content.open { display: block; }
 
     .rich-editor-toolbar {
-      display: flex; gap: 5px; padding: 8px; background: #f5f5f5; border: 1px solid #ddd;
-      border-bottom: none; border-radius: 6px 6px 0 0; flex-wrap: wrap;
+      display: flex; gap: 5px; padding: 10px; background: #1a1a1a; border: 1px solid #333;
+      border-bottom: none; border-radius: 8px 8px 0 0; flex-wrap: wrap;
     }
     .rich-editor-toolbar button {
-      padding: 6px 10px; border: 1px solid #ddd; background: #fff; border-radius: 4px;
-      cursor: pointer; font-size: 12px; transition: all 0.2s;
+      padding: 8px 12px; border: 1px solid #333; background: #111; border-radius: 6px;
+      cursor: pointer; font-size: 12px; transition: all 0.2s; color: #fff;
     }
-    .rich-editor-toolbar button:hover { background: #F5CB5C; border-color: #F5CB5C; }
-    .rich-editor-toolbar button.active { background: #F5CB5C; border-color: #F5CB5C; }
+    .rich-editor-toolbar button:hover { background: #333; border-color: #444; }
+    .rich-editor-toolbar button.active { background: #fff; border-color: #fff; color: #000; }
     .rich-editor-toolbar select {
-      padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;
+      padding: 8px 10px; border: 1px solid #333; border-radius: 6px; font-size: 12px;
+      background: #111; color: #fff;
     }
     .rich-editor-content {
-      min-height: 150px; padding: 15px; border: 1px solid #ddd; border-radius: 0 0 6px 6px;
-      background: #fff; outline: none; font-size: 14px; line-height: 1.6;
+      min-height: 150px; padding: 15px; border: 1px solid #333; border-radius: 0 0 8px 8px;
+      background: #0a0a0a; outline: none; font-size: 14px; line-height: 1.6; color: #fff;
     }
-    .rich-editor-content:focus { border-color: #F5CB5C; }
-    .summary-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
+    .rich-editor-content:focus { border-color: #555; }
+    .summary-row { display: flex; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #222; }
     .summary-row:last-child { border-bottom: none; }
-    .summary-row.total { font-weight: 700; font-size: 18px; border-top: 2px solid #000; margin-top: 10px; padding-top: 15px; }
-    .summary-row .label { color: #666; }
-    .summary-row.total .label { color: #000; }
+    .summary-row.total { font-weight: 700; font-size: 20px; border-top: 1px solid #333; margin-top: 10px; padding-top: 18px; }
+    .summary-row .label { color: #888; }
+    .summary-row.total .label { color: #fff; }
 
     .btn {
-      padding: 14px 28px; border: none; border-radius: 6px; font-size: 14px;
-      font-weight: 600; cursor: pointer; transition: all 0.2s;
+      padding: 14px 28px; border: none; border-radius: 8px; font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
     }
-    .btn-primary { background: #F5CB5C; color: #000; }
-    .btn-primary:hover { background: #e6bc4d; }
+    .btn-primary { background: #fff; color: #000; }
+    .btn-primary:hover { background: #e5e5e5; transform: translateY(-1px); }
     .btn-secondary { background: #333; color: #fff; }
-    .btn-secondary:hover { background: #555; }
-    .btn-outline { background: transparent; border: 2px solid #333; color: #333; }
-    .btn-outline:hover { background: #333; color: #fff; }
-    .btn-success { background: #4CAF50; color: #fff; }
-    .btn-success:hover { background: #43A047; }
+    .btn-secondary:hover { background: #444; }
+    .btn-outline { background: transparent; border: 1px solid #444; color: #fff; }
+    .btn-outline:hover { background: #222; border-color: #666; }
+    .btn-success { background: #22c55e; color: #000; font-weight: 700; }
+    .btn-success:hover { background: #16a34a; }
 
-    .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-group { display: flex; gap: 12px; margin-top: 20px; }
 
-    .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 20px; }
-    .tab { padding: 12px 20px; cursor: pointer; font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; }
-    .tab:hover { color: #F5CB5C; }
-    .tab.active { border-bottom-color: #F5CB5C; color: #000; }
-    .tab.disabled { color: #ccc; cursor: not-allowed; }
+    .tabs { display: flex; border-bottom: 1px solid #333; margin-bottom: 25px; gap: 5px; }
+    .tab { padding: 14px 24px; cursor: pointer; font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px; color: #666; transition: all 0.2s; font-size: 14px; }
+    .tab:hover { color: #fff; }
+    .tab.active { border-bottom-color: #fff; color: #fff; }
+    .tab.disabled { color: #444; cursor: not-allowed; }
 
     /* Service Toggle Buttons */
     .service-toggles { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
     .service-toggle {
-      padding: 12px 20px; border: 2px solid #ddd; border-radius: 8px;
-      background: #fff; cursor: pointer; transition: all 0.2s;
-      font-weight: 500; font-size: 14px;
+      padding: 14px 22px; border: 1px solid #333; border-radius: 8px;
+      background: #0a0a0a; cursor: pointer; transition: all 0.2s;
+      font-weight: 500; font-size: 14px; color: #888;
     }
-    .service-toggle:hover { border-color: #F5CB5C; background: #fffef5; }
-    .service-toggle.active { border-color: #F5CB5C; background: #F5CB5C; color: #000; }
+    .service-toggle:hover { border-color: #555; color: #fff; background: #151515; }
+    .service-toggle.active { border-color: #fff; background: #fff; color: #000; font-weight: 600; }
 
     /* Recommendation Card */
     .recommendation-card {
-      background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
-      border: 2px solid #4CAF50; border-radius: 12px; padding: 25px; margin-top: 30px;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
+      border: 1px solid #22c55e; border-radius: 12px; padding: 28px; margin-top: 30px;
     }
-    .recommendation-card h3 { font-size: 18px; margin-bottom: 10px; color: #2E7D32; }
-    .recommendation-card .kit-name { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-    .recommendation-card .kit-desc { font-size: 14px; color: #555; margin-bottom: 15px; }
-    .recommendation-card .included-services { margin-top: 15px; }
-    .recommendation-card .included-services h4 { font-size: 12px; text-transform: uppercase; color: #666; margin-bottom: 10px; }
+    .recommendation-card h3 { font-size: 12px; margin-bottom: 12px; color: #22c55e; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    .recommendation-card .kit-name { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #fff; }
+    .recommendation-card .kit-desc { font-size: 14px; color: #888; margin-bottom: 15px; line-height: 1.5; }
+    .recommendation-card .included-services { margin-top: 18px; }
+    .recommendation-card .included-services h4 { font-size: 11px; text-transform: uppercase; color: #666; margin-bottom: 12px; letter-spacing: 0.5px; }
     .recommendation-card .service-tag {
-      display: inline-block; background: #fff; border: 1px solid #4CAF50;
-      padding: 4px 10px; border-radius: 15px; font-size: 12px; margin-right: 6px; margin-bottom: 6px;
+      display: inline-block; background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e;
+      padding: 6px 12px; border-radius: 20px; font-size: 12px; margin-right: 6px; margin-bottom: 8px; color: #22c55e; font-weight: 500;
     }
 
+    /* Custom Build Card */
+    .custom-build-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+      border: 1px solid #444; border-radius: 12px; padding: 28px; margin-top: 30px;
+    }
+    .custom-build-card h3 { font-size: 12px; margin-bottom: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    .custom-build-card .kit-name { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #fff; }
+    .custom-build-card .kit-desc { font-size: 14px; color: #888; margin-bottom: 15px; line-height: 1.5; }
+
     /* Add-ons Section */
-    .addons-section { margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee; }
-    .addons-section h3 { font-size: 16px; margin-bottom: 15px; color: #666; }
+    .addons-section { margin-top: 30px; padding-top: 25px; border-top: 1px solid #333; }
+    .addons-section h3 { font-size: 13px; margin-bottom: 18px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
     .addon-item {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 15px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 8px;
-      background: #fff;
+      padding: 14px 18px; border: 1px solid #333; border-radius: 8px; margin-bottom: 8px;
+      background: #0a0a0a; transition: all 0.2s;
     }
-    .addon-item:hover { border-color: #ddd; }
-    .addon-item.selected { background: #F5CB5C20; border-color: #F5CB5C; }
+    .addon-item:hover { border-color: #444; }
+    .addon-item.selected { background: rgba(255, 255, 255, 0.05); border-color: #fff; }
     .addon-info { flex: 1; }
-    .addon-name { font-weight: 500; font-size: 14px; }
-    .addon-desc { font-size: 11px; color: #666; margin-top: 2px; }
+    .addon-name { font-weight: 600; font-size: 14px; color: #fff; }
+    .addon-desc { font-size: 11px; color: #666; margin-top: 3px; }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #111; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #444; }
+
+    /* Checkbox styling */
+    input[type="checkbox"] {
+      width: 18px; height: 18px; accent-color: #22c55e; cursor: pointer;
+    }
 
     /* PDF Preview Styles */
     .pdf-preview { display: none; }
@@ -238,34 +275,38 @@
 
     .modal-overlay {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
-      z-index: 1000;
+      background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+      z-index: 1000; backdrop-filter: blur(4px);
     }
-    .modal { background: #fff; border-radius: 12px; max-width: 900px; width: 90%; max-height: 90vh; overflow: auto; }
-    .modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+    .modal { background: #111; border-radius: 12px; max-width: 900px; width: 90%; max-height: 90vh; overflow: auto; border: 1px solid #333; }
+    .modal-header { padding: 20px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
     .modal-body { padding: 20px; }
-    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; }
+    .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #888; }
+    .modal-close:hover { color: #fff; }
 
-    .checkbox-wrapper { display: flex; align-items: center; gap: 8px; }
+    .checkbox-wrapper { display: flex; align-items: center; gap: 10px; }
     .checkbox-wrapper input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    .checkbox-wrapper label { color: #ccc; }
 
     /* Editable fields in review */
-    .editable-section { margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px; }
-    .editable-section h3 { margin-bottom: 15px; font-size: 16px; }
+    .editable-section { margin-bottom: 30px; padding: 25px; background: #111; border-radius: 10px; border: 1px solid #222; }
+    .editable-section h3 { margin-bottom: 18px; font-size: 14px; color: #fff; font-weight: 600; }
     .editable-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
     .editable-row.full { grid-template-columns: 1fr; }
-    .editable-field label { display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px; text-transform: uppercase; }
+    .editable-field label { display: block; font-size: 11px; font-weight: 600; color: #666; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
     .editable-field input, .editable-field textarea {
-      width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;
+      width: 100%; padding: 12px 14px; border: 1px solid #333; border-radius: 6px; font-size: 14px;
+      background: #0a0a0a; color: #fff; font-family: 'Inter', sans-serif;
     }
+    .editable-field input:focus, .editable-field textarea:focus { border-color: #555; outline: none; }
     .editable-field textarea { min-height: 60px; resize: vertical; }
 
     .section-divider {
-      border: none; border-top: 2px solid #eee; margin: 30px 0;
+      border: none; border-top: 1px solid #333; margin: 30px 0;
     }
 
     .no-recommendation {
-      background: #f9f9f9; border: 2px dashed #ddd; border-radius: 12px;
+      background: #111; border: 1px dashed #444; border-radius: 12px;
       padding: 30px; text-align: center; margin-top: 30px; color: #666;
     }
 
@@ -781,8 +822,10 @@
       return (
         <div className="app-container">
           <header className="header">
-            <h1>Native Digital</h1>
-            <p>SOW Cost Estimator</p>
+            <div className="header-left">
+              <div className="header-logo">Native Digital<span>|</span></div>
+              <h1>SOW Cost Estimator</h1>
+            </div>
           </header>
 
           <div className="tabs">
@@ -825,10 +868,10 @@
                         if (e.target.value.trim()) setClientNameError(false);
                       }}
                       placeholder="e.g., Lectric, Mint Mobile, GoPro"
-                      style={clientNameError ? { borderColor: '#e53935', boxShadow: '0 0 0 2px rgba(229, 57, 53, 0.2)' } : {}}
+                      style={clientNameError ? { borderColor: '#ef4444', boxShadow: '0 0 0 2px rgba(239, 68, 68, 0.25)' } : {}}
                     />
                     {clientNameError && (
-                      <p style={{ color: '#e53935', fontSize: 12, marginTop: 6 }}>Client name is required to proceed.</p>
+                      <p style={{ color: '#ef4444', fontSize: 12, marginTop: 8, fontWeight: 500 }}>Client name is required to proceed.</p>
                     )}
                   </div>
 
@@ -874,7 +917,7 @@
                             </button>
                             <button
                               onClick={() => setIsCustomizingKit(true)}
-                              style={{ background: 'none', border: 'none', color: '#666', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+                              style={{ background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
                             >
                               Customize this Kit
                             </button>
@@ -883,7 +926,7 @@
                       ) : (
                         <>
                           <div className="included-services" style={{ marginTop: 15 }}>
-                            <h4 style={{ marginBottom: 12 }}>Select services to include:</h4>
+                            <h4 style={{ marginBottom: 12, color: '#888' }}>Select services to include:</h4>
                             {recommendedKit.bricks.map(brickId => (
                               <div
                                 key={brickId}
@@ -919,7 +962,7 @@
                           <div style={{ marginTop: 12, textAlign: 'center' }}>
                             <button
                               onClick={() => { setIsCustomizingKit(false); setExcludedKitBricks([]); }}
-                              style={{ background: 'none', border: 'none', color: '#666', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+                              style={{ background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
                             >
                               Cancel customization
                             </button>
@@ -930,8 +973,8 @@
                   )}
 
                   {customBuild && (
-                    <div className="recommendation-card" style={{ background: 'linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%)', borderColor: '#F5CB5C' }}>
-                      <h3 style={{ color: '#B8860B' }}>🛠 Custom Build</h3>
+                    <div className="custom-build-card">
+                      <h3>🛠 Custom Build</h3>
                       <div className="kit-name">Build Your Own Scope</div>
                       <div className="kit-desc">Select individual services from the add-ons panel to create a custom scope of work tailored to your specific needs.</div>
 
@@ -1261,6 +1304,7 @@
               </div>
 
               {/* PDF Content */}
+              <div style={{ background: '#1a1a1a', padding: '30px', borderRadius: '12px', border: '1px solid #333' }}>
               <div id="pdf-content">
                 <div className="pdf-header">
                   <div className="pdf-logo">Native Digital</div>
@@ -1452,6 +1496,7 @@
                     Once signed, your Account Manager will provide next steps and upcoming milestones.
                   </p>
                 </div>
+              </div>
               </div>
             </div>
           )}
