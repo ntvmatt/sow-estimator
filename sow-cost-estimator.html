@@ -68,16 +68,37 @@
     .brick-hours span { font-size: 12px; color: #666; }
     .brick-toggle { margin-left: 10px; }
 
-    .media-tier-selector { margin-top: 15px; }
-    .media-tier-option {
-      display: flex; align-items: center; padding: 10px;
-      border: 1px solid #eee; border-radius: 6px; margin-bottom: 6px; cursor: pointer;
-    }
-    .media-tier-option:hover { background: #f9f9f9; }
-    .media-tier-option.selected { background: #F5CB5C20; border-color: #F5CB5C; }
-    .media-tier-option input { margin-right: 10px; }
-
     .summary-section { position: sticky; top: 20px; }
+
+    .collapsible-header {
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; padding: 12px 0; border-bottom: 1px solid #eee; margin-bottom: 15px;
+    }
+    .collapsible-header:hover { color: #F5CB5C; }
+    .collapsible-header h3 { margin: 0; font-size: 14px; font-weight: 600; }
+    .collapsible-header .toggle-icon { font-size: 12px; color: #666; transition: transform 0.2s; }
+    .collapsible-header.open .toggle-icon { transform: rotate(180deg); }
+    .collapsible-content { display: none; }
+    .collapsible-content.open { display: block; }
+
+    .rich-editor-toolbar {
+      display: flex; gap: 5px; padding: 8px; background: #f5f5f5; border: 1px solid #ddd;
+      border-bottom: none; border-radius: 6px 6px 0 0; flex-wrap: wrap;
+    }
+    .rich-editor-toolbar button {
+      padding: 6px 10px; border: 1px solid #ddd; background: #fff; border-radius: 4px;
+      cursor: pointer; font-size: 12px; transition: all 0.2s;
+    }
+    .rich-editor-toolbar button:hover { background: #F5CB5C; border-color: #F5CB5C; }
+    .rich-editor-toolbar button.active { background: #F5CB5C; border-color: #F5CB5C; }
+    .rich-editor-toolbar select {
+      padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;
+    }
+    .rich-editor-content {
+      min-height: 150px; padding: 15px; border: 1px solid #ddd; border-radius: 0 0 6px 6px;
+      background: #fff; outline: none; font-size: 14px; line-height: 1.6;
+    }
+    .rich-editor-content:focus { border-color: #F5CB5C; }
     .summary-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
     .summary-row:last-child { border-bottom: none; }
     .summary-row.total { font-weight: 700; font-size: 18px; border-top: 2px solid #000; margin-top: 10px; padding-top: 15px; }
@@ -169,6 +190,14 @@
     .pdf-detail-row { margin-bottom: 15px; }
     .pdf-detail-label { font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 4px; }
     .pdf-detail-value { font-size: 14px; color: #333; }
+    .pdf-additional-details { font-size: 14px; color: #333; line-height: 1.6; }
+    .pdf-additional-details ul, .pdf-additional-details ol { margin-left: 20px; }
+
+    .rich-editor-content:empty:before {
+      content: attr(placeholder);
+      color: #999;
+      pointer-events: none;
+    }
 
     .pdf-services { margin: 30px 0; }
     .pdf-service-header { background: #000; color: #fff; padding: 15px 20px; font-weight: 600; margin-bottom: 1px; }
@@ -185,8 +214,21 @@
     .pdf-fee-note { font-size: 11px; color: #666; font-style: italic; margin-top: 10px; }
 
     .pdf-terms { margin-top: 40px; padding-top: 30px; border-top: 1px solid #eee; }
-    .pdf-terms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; font-size: 10px; line-height: 1.6; color: #666; }
-    .pdf-term-section h4 { font-size: 11px; font-weight: 700; color: #000; margin-bottom: 8px; }
+    .pdf-terms-grid {
+      column-count: 2;
+      column-gap: 25px;
+      font-size: 9px;
+      line-height: 1.5;
+      color: #666;
+    }
+    .pdf-term-section {
+      break-inside: avoid;
+      margin-bottom: 12px;
+      display: inline-block;
+      width: 100%;
+    }
+    .pdf-term-section h4 { font-size: 10px; font-weight: 700; color: #000; margin-bottom: 4px; }
+    .pdf-term-section p { margin: 0; }
 
     .pdf-signature { margin-top: 40px; padding-top: 30px; border-top: 1px solid #eee; }
     .pdf-sig-row { display: flex; gap: 30px; margin-bottom: 20px; }
@@ -243,82 +285,71 @@
     const HOURLY_RATE = 195;
     const TECH_FEE = 299;
 
-    const MEDIA_TIERS = [
-      { id: 'under10k', label: 'Less than $10k/mo', fee: 100 },
-      { id: '10k-25k', label: '$10k - $25k/mo', fee: 175 },
-      { id: '25k-50k', label: '$25k - $50k/mo', fee: 225 },
-      { id: '50k-75k', label: '$50k - $75k/mo', fee: 300 },
-      { id: '75k-150k', label: '$75k - $150k/mo', fee: 500 },
-      { id: '150k-500k', label: '$150k - $500k/mo', fee: 1000 },
-      { id: '500k-750k', label: '$500k - $750k/mo', fee: 1500 },
-      { id: '750k-1m', label: '$750k - $1.0mil/mo', fee: 2000 },
-    ];
-
     const BRICKS = {
       kickoff: {
         name: 'Kickoff & Measurement Plan',
         desc: 'Review project timeline, objectives, audience insights, goals and team roles. Measurement plan to inform client dashboard and quarterly reporting template.',
         note: '*Does not include conversion validation or implementation',
-        defaultHours: { mo1: 37, mo2: 0, mo3: 0, mo4: 0, mo5: 0 },
+        defaultHours: { mo1: 37, mo2: 0, mo3: 0, mo4: 0, mo5: 0, mo6: 0, mo7: 0, mo8: 0, mo9: 0, mo10: 0, mo11: 0, mo12: 0 },
         category: 'setup'
       },
       keywordAnalysis: {
         name: 'Keyword Analysis',
         desc: 'Generate keyword list. Prioritize topic hierarchy clusters based on relevancy, volume and competition. Set competitive benchmarks - kw number, volume, CPC of keywords.',
-        defaultHours: { mo1: 50, mo2: 0, mo3: 0, mo4: 0, mo5: 0 },
+        defaultHours: { mo1: 50, mo2: 0, mo3: 0, mo4: 0, mo5: 0, mo6: 0, mo7: 0, mo8: 0, mo9: 0, mo10: 0, mo11: 0, mo12: 0 },
         category: 'seo'
       },
       digitalAdCreative: {
         name: 'Digital Ad Creation & Landing Page Creative',
         desc: 'Audit & plan for creation & testing of ad copy and visual assets based on campaign plan. Landing page copy and visual asset optimization.',
         note: '*New content creation and landing page implementation to be estimated separately.',
-        defaultHours: { mo1: 0, mo2: 50, mo3: 50, mo4: 0, mo5: 25 },
+        defaultHours: { mo1: 0, mo2: 50, mo3: 50, mo4: 0, mo5: 25, mo6: 0, mo7: 25, mo8: 0, mo9: 25, mo10: 0, mo11: 25, mo12: 0 },
         category: 'creative'
       },
       channelStrategy: {
         name: 'Channel Strategy, Campaign Setup',
         desc: 'Deliver playbook with audience targeting, messaging strategy, flighting sequence, engagement metric benchmarks, goals & budget allocation. Set up campaigns and measurement for launch.',
         channels: ['Search', 'Social', 'Display', 'Programmatic'],
-        defaultHours: { mo1: 0, mo2: 50, mo3: 0, mo4: 0, mo5: 0 },
+        defaultHours: { mo1: 0, mo2: 50, mo3: 0, mo4: 0, mo5: 0, mo6: 0, mo7: 0, mo8: 0, mo9: 0, mo10: 0, mo11: 0, mo12: 0 },
         category: 'strategy'
       },
       monthlyManagement: {
         name: 'Monthly Management & Optimization',
         desc: 'Daily/weekly optimization of campaign performance (audience, bids, copy edits, negative kw, geographic). Bi-weekly/monthly discussion of progress & priorities. Real-time access to live dashboard + Quarterly all-hands indepth reporting.',
         note: '*Media cost not included - billed directly from platform to client with no markup.',
-        defaultHours: { mo1: 8, mo2: 8, mo3: 28, mo4: 28, mo5: 28 },
+        defaultHours: { mo1: 8, mo2: 8, mo3: 28, mo4: 28, mo5: 28, mo6: 28, mo7: 28, mo8: 28, mo9: 28, mo10: 28, mo11: 28, mo12: 28 },
         category: 'management'
       },
       discoverability: {
         name: 'Discoverability & Conversion: Monthly Optimization',
         desc: 'Inbound visibility across search (Google/Bing), user-generated (Reddit, YouTube, reviews), and AI assistants. On-site conversion rate optimization to increase goal completion.',
-        defaultHours: { mo1: 30, mo2: 30, mo3: 30, mo4: 30, mo5: 30 },
+        defaultHours: { mo1: 30, mo2: 30, mo3: 30, mo4: 30, mo5: 30, mo6: 30, mo7: 30, mo8: 30, mo9: 30, mo10: 30, mo11: 30, mo12: 30 },
         category: 'seo'
       },
       creativeExecution: {
         name: 'Monthly Creative Execution',
         desc: 'Concept, design and copywriting based on client-provided brand direction. Deliver production-ready creative files (may include video, photo, audio, print, OOH, collateral, tradeshow).',
         note: '*Uses existing visual assets. Hard costs for new photo or video creation billed direct.',
-        defaultHours: { mo1: 50, mo2: 50, mo3: 50, mo4: 50, mo5: 50 },
+        defaultHours: { mo1: 50, mo2: 50, mo3: 50, mo4: 50, mo5: 50, mo6: 50, mo7: 50, mo8: 50, mo9: 50, mo10: 50, mo11: 50, mo12: 50 },
         category: 'creative'
       },
       organicSocialPlaybook: {
         name: 'Organic Social Media Playbook',
         desc: 'Analyze existing social efforts against competitors. Develop editorial strategy for up to 4 channels: Facebook, Instagram, Twitter, and LinkedIn.',
-        defaultHours: { mo1: 75, mo2: 0, mo3: 0, mo4: 0, mo5: 0 },
+        defaultHours: { mo1: 75, mo2: 0, mo3: 0, mo4: 0, mo5: 0, mo6: 0, mo7: 0, mo8: 0, mo9: 0, mo10: 0, mo11: 0, mo12: 0 },
         category: 'social'
       },
       socialContent: {
         name: 'Social Content Creation: Visuals & Writing',
         desc: 'Deliver visual infographics, stylized images, typography/designs and writing for foundational organic and paid social media for 4 channels.',
         note: '*Content posting and social media community engagement to be led by client team',
-        defaultHours: { mo1: 0, mo2: 33, mo3: 33, mo4: 33, mo5: 33 },
+        defaultHours: { mo1: 0, mo2: 33, mo3: 33, mo4: 33, mo5: 33, mo6: 33, mo7: 33, mo8: 33, mo9: 33, mo10: 33, mo11: 33, mo12: 33 },
         category: 'social'
       },
       contentStrategy: {
         name: 'Content Strategy & Editorial Calendar',
         desc: 'Develop content strategy and editorial calendar aligned with business objectives and audience needs.',
-        defaultHours: { mo1: 0, mo2: 0, mo3: 0, mo4: 0, mo5: 0 },
+        defaultHours: { mo1: 0, mo2: 0, mo3: 0, mo4: 0, mo5: 0, mo6: 0, mo7: 0, mo8: 0, mo9: 0, mo10: 0, mo11: 0, mo12: 0 },
         category: 'strategy'
       }
     };
@@ -519,21 +550,23 @@
       const [clientInfo, setClientInfo] = useState({
         name: '',
         date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-        mission: '',
-        industries: '',
-        decisionMakers: '',
-        solution: '',
-        funnelFlow: '',
-        milestones: ''
+        additionalDetails: ''
       });
+      const editorRef = React.useRef(null);
       const [selectedServices, setSelectedServices] = useState([]);
       const [selectedAddons, setSelectedAddons] = useState([]);
+      const [isCustomizingKit, setIsCustomizingKit] = useState(false);
+      const [excludedKitBricks, setExcludedKitBricks] = useState([]);
       const [selectedKit, setSelectedKit] = useState(null);
       const [selectedBricks, setSelectedBricks] = useState({});
       const [brickHours, setBrickHours] = useState({});
-      const [selectedMediaTier, setSelectedMediaTier] = useState('25k-50k');
       const [includeTechFee, setIncludeTechFee] = useState(true);
       const [selectedChannels, setSelectedChannels] = useState(['Search', 'Social', 'Display', 'Programmatic']);
+      const [clientNameError, setClientNameError] = useState(false);
+      const clientNameRef = React.useRef(null);
+      const [showKitSelector, setShowKitSelector] = useState(false);
+      const [showBricksCustomizer, setShowBricksCustomizer] = useState(false);
+      const [showCostDetails, setShowCostDetails] = useState(false);
 
       const recommendedKit = getRecommendedKit(selectedServices);
       const customBuild = isCustomBuild(selectedServices);
@@ -547,6 +580,17 @@
             : [...prev, serviceId]
         );
         setSelectedAddons([]); // Reset addons when services change
+        setIsCustomizingKit(false); // Reset customization when services change
+        setExcludedKitBricks([]); // Reset excluded bricks
+      };
+
+      // Toggle kit brick exclusion (for customizing kit)
+      const toggleKitBrick = (brickId) => {
+        setExcludedKitBricks(prev =>
+          prev.includes(brickId)
+            ? prev.filter(b => b !== brickId)
+            : [...prev, brickId]
+        );
       };
 
       // Toggle addon selection
@@ -562,15 +606,25 @@
       const proceedWithKit = () => {
         if (!recommendedKit) return;
 
+        // Validate client name
+        if (!clientInfo.name.trim()) {
+          setClientNameError(true);
+          clientNameRef.current?.focus();
+          clientNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+
         setSelectedKit(recommendedKit.id);
 
-        // Initialize bricks from kit + addons
+        // Initialize bricks from kit + addons (excluding any removed bricks)
         const newBricks = {};
         const newHours = {};
 
         recommendedKit.bricks.forEach(brickId => {
-          newBricks[brickId] = true;
-          newHours[brickId] = { ...BRICKS[brickId].defaultHours };
+          if (!excludedKitBricks.includes(brickId)) {
+            newBricks[brickId] = true;
+            newHours[brickId] = { ...BRICKS[brickId].defaultHours };
+          }
         });
 
         selectedAddons.forEach(addonId => {
@@ -587,6 +641,14 @@
       // Proceed with custom build (only selected addons, no kit)
       const proceedWithCustomBuild = () => {
         if (selectedAddons.length === 0) return;
+
+        // Validate client name
+        if (!clientInfo.name.trim()) {
+          setClientNameError(true);
+          clientNameRef.current?.focus();
+          clientNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
 
         setSelectedKit('custom'); // Use 'custom' as a special kit ID
 
@@ -653,7 +715,7 @@
       };
 
       const calculateTotals = () => {
-        let monthlyHours = { mo1: 0, mo2: 0, mo3: 0, mo4: 0, mo5: 0 };
+        let monthlyHours = { mo1: 0, mo2: 0, mo3: 0, mo4: 0, mo5: 0, mo6: 0, mo7: 0, mo8: 0, mo9: 0, mo10: 0, mo11: 0, mo12: 0 };
 
         Object.entries(selectedBricks).forEach(([brickId, included]) => {
           if (included && brickHours[brickId]) {
@@ -664,7 +726,6 @@
         });
 
         const monthlyFees = {};
-        const mediaTier = MEDIA_TIERS.find(t => t.id === selectedMediaTier);
         const techFee = includeTechFee ? TECH_FEE : 0;
 
         Object.keys(monthlyHours).forEach(month => {
@@ -672,7 +733,7 @@
           monthlyFees[month] = serviceFee + techFee;
         });
 
-        const ongoingMonths = ['mo2', 'mo3', 'mo4', 'mo5'];
+        const ongoingMonths = ['mo2', 'mo3', 'mo4', 'mo5', 'mo6', 'mo7', 'mo8', 'mo9', 'mo10', 'mo11', 'mo12'];
         const avgOngoing = ongoingMonths.reduce((sum, m) => sum + monthlyFees[m], 0) / ongoingMonths.length;
 
         return {
@@ -701,6 +762,18 @@
 
       const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(amount));
+      };
+
+      // Rich text editor commands
+      const execCommand = (command, value = null) => {
+        document.execCommand(command, false, value);
+        editorRef.current?.focus();
+      };
+
+      const handleEditorInput = () => {
+        if (editorRef.current) {
+          setClientInfo(prev => ({ ...prev, additionalDetails: editorRef.current.innerHTML }));
+        }
       };
 
       const canProceedToConfig = clientInfo.name && recommendedKit;
@@ -744,11 +817,19 @@
                   <div className="form-group">
                     <label>Client Name *</label>
                     <input
+                      ref={clientNameRef}
                       type="text"
                       value={clientInfo.name}
-                      onChange={(e) => setClientInfo({...clientInfo, name: e.target.value})}
+                      onChange={(e) => {
+                        setClientInfo({...clientInfo, name: e.target.value});
+                        if (e.target.value.trim()) setClientNameError(false);
+                      }}
                       placeholder="e.g., Lectric, Mint Mobile, GoPro"
+                      style={clientNameError ? { borderColor: '#e53935', boxShadow: '0 0 0 2px rgba(229, 57, 53, 0.2)' } : {}}
                     />
+                    {clientNameError && (
+                      <p style={{ color: '#e53935', fontSize: 12, marginTop: 6 }}>Client name is required to proceed.</p>
+                    )}
                   </div>
 
                   <hr className="section-divider" />
@@ -774,22 +855,77 @@
                       <h3>✓ Recommended Kit</h3>
                       <div className="kit-name">{recommendedKit.name}</div>
                       <div className="kit-desc">{recommendedKit.desc}</div>
-                      <div className="included-services">
-                        <h4>Included Services</h4>
-                        {recommendedKit.bricks.map(brickId => (
-                          <span key={brickId} className="service-tag">{BRICKS[brickId].name}</span>
-                        ))}
-                      </div>
 
-                      <div className="btn-group" style={{ marginTop: 20 }}>
-                        <button
-                          className="btn btn-success"
-                          onClick={proceedWithKit}
-                          disabled={!clientInfo.name}
-                        >
-                          Proceed with This Kit →
-                        </button>
-                      </div>
+                      {!isCustomizingKit ? (
+                        <>
+                          <div className="included-services">
+                            <h4>Included Services</h4>
+                            {recommendedKit.bricks.map(brickId => (
+                              <span key={brickId} className="service-tag">{BRICKS[brickId].name}</span>
+                            ))}
+                          </div>
+
+                          <div className="btn-group" style={{ marginTop: 20, alignItems: 'center' }}>
+                            <button
+                              className="btn btn-success"
+                              onClick={proceedWithKit}
+                            >
+                              Proceed with This Kit →
+                            </button>
+                            <button
+                              onClick={() => setIsCustomizingKit(true)}
+                              style={{ background: 'none', border: 'none', color: '#666', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+                            >
+                              Customize this Kit
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="included-services" style={{ marginTop: 15 }}>
+                            <h4 style={{ marginBottom: 12 }}>Select services to include:</h4>
+                            {recommendedKit.bricks.map(brickId => (
+                              <div
+                                key={brickId}
+                                className={`addon-item ${!excludedKitBricks.includes(brickId) ? 'selected' : ''}`}
+                                onClick={() => toggleKitBrick(brickId)}
+                                style={{ marginBottom: 8 }}
+                              >
+                                <div className="addon-info">
+                                  <div className="addon-name">{BRICKS[brickId].name}</div>
+                                </div>
+                                <input
+                                  type="checkbox"
+                                  checked={!excludedKitBricks.includes(brickId)}
+                                  onChange={() => toggleKitBrick(brickId)}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          {excludedKitBricks.length > 0 && (
+                            <p style={{ fontSize: 12, color: '#666', marginTop: 10 }}>
+                              {excludedKitBricks.length} service{excludedKitBricks.length > 1 ? 's' : ''} will be removed from the kit.
+                            </p>
+                          )}
+                          <div className="btn-group" style={{ marginTop: 15 }}>
+                            <button
+                              className="btn btn-success"
+                              onClick={proceedWithKit}
+                              disabled={excludedKitBricks.length === recommendedKit.bricks.length}
+                            >
+                              Proceed with Customized Kit →
+                            </button>
+                          </div>
+                          <div style={{ marginTop: 12, textAlign: 'center' }}>
+                            <button
+                              onClick={() => { setIsCustomizingKit(false); setExcludedKitBricks([]); }}
+                              style={{ background: 'none', border: 'none', color: '#666', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+                            >
+                              Cancel customization
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -803,7 +939,7 @@
                         <button
                           className="btn btn-primary"
                           onClick={proceedWithCustomBuild}
-                          disabled={!clientInfo.name || selectedAddons.length === 0}
+                          disabled={selectedAddons.length === 0}
                         >
                           Proceed with Custom Build →
                         </button>
@@ -899,51 +1035,7 @@
                   <h2>Selected Kit: {selectedKit === 'custom' ? 'Custom Build' : KITS.find(k => k.id === selectedKit)?.name}</h2>
                 </div>
                 <div className="panel-body">
-                  <div className="form-group">
-                    <label>Or choose a different kit:</label>
-                    <div className="kit-selector">
-                      {KITS.map(kit => (
-                        <div
-                          key={kit.id}
-                          className={`kit-option ${selectedKit === kit.id ? 'selected' : ''} ${recommendedKit?.id === kit.id ? 'recommended' : ''}`}
-                          onClick={() => {
-                            setSelectedKit(kit.id);
-                            const newBricks = {};
-                            const newHours = {};
-                            kit.bricks.forEach(brickId => {
-                              newBricks[brickId] = true;
-                              newHours[brickId] = { ...BRICKS[brickId].defaultHours };
-                            });
-                            setSelectedBricks(newBricks);
-                            setBrickHours(newHours);
-                            setSelectedChannels(kit.channels || []);
-                          }}
-                        >
-                          <h3>
-                            {kit.name}
-                            {recommendedKit?.id === kit.id && <span className="recommended-badge">Recommended</span>}
-                          </h3>
-                          <p>{kit.desc}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="form-group" style={{ marginTop: 20 }}>
-                    <label>Media Spend Tier</label>
-                    <select
-                      value={selectedMediaTier}
-                      onChange={(e) => setSelectedMediaTier(e.target.value)}
-                    >
-                      {MEDIA_TIERS.map(tier => (
-                        <option key={tier.id} value={tier.id}>
-                          {tier.label} (+{formatCurrency(tier.fee)}/mo)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="checkbox-wrapper" style={{ marginTop: 15 }}>
+                  <div className="checkbox-wrapper">
                     <input
                       type="checkbox"
                       id="techFee"
@@ -953,26 +1045,74 @@
                     <label htmlFor="techFee">Include Tech Fee (+$299/mo for software licenses & tools)</label>
                   </div>
 
-                  <h3 style={{ marginTop: 30, marginBottom: 15 }}>Customize Services (Bricks)</h3>
-                  <div className="brick-list">
-                    {Object.entries(BRICKS).map(([brickId, brick]) => (
-                      <div
-                        key={brickId}
-                        className={`brick-item ${selectedBricks[brickId] ? 'included' : 'excluded'}`}
-                      >
-                        <div className="brick-info">
-                          <div className="brick-name">{brick.name}</div>
-                          <div className="brick-desc">{brick.desc.substring(0, 100)}...</div>
-                        </div>
-                        <div className="brick-toggle">
-                          <input
-                            type="checkbox"
-                            checked={selectedBricks[brickId] || false}
-                            onChange={() => toggleBrick(brickId)}
-                          />
-                        </div>
+                  <div style={{ marginTop: 25 }}>
+                    <div
+                      className={`collapsible-header ${showKitSelector ? 'open' : ''}`}
+                      onClick={() => setShowKitSelector(!showKitSelector)}
+                    >
+                      <h3>Change Kit</h3>
+                      <span className="toggle-icon">▼</span>
+                    </div>
+                    <div className={`collapsible-content ${showKitSelector ? 'open' : ''}`}>
+                      <div className="kit-selector">
+                        {KITS.map(kit => (
+                          <div
+                            key={kit.id}
+                            className={`kit-option ${selectedKit === kit.id ? 'selected' : ''} ${recommendedKit?.id === kit.id ? 'recommended' : ''}`}
+                            onClick={() => {
+                              setSelectedKit(kit.id);
+                              const newBricks = {};
+                              const newHours = {};
+                              kit.bricks.forEach(brickId => {
+                                newBricks[brickId] = true;
+                                newHours[brickId] = { ...BRICKS[brickId].defaultHours };
+                              });
+                              setSelectedBricks(newBricks);
+                              setBrickHours(newHours);
+                              setSelectedChannels(kit.channels || []);
+                            }}
+                          >
+                            <h3>
+                              {kit.name}
+                              {recommendedKit?.id === kit.id && <span className="recommended-badge">Recommended</span>}
+                            </h3>
+                            <p>{kit.desc}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 15 }}>
+                    <div
+                      className={`collapsible-header ${showBricksCustomizer ? 'open' : ''}`}
+                      onClick={() => setShowBricksCustomizer(!showBricksCustomizer)}
+                    >
+                      <h3>Customize Services (Bricks)</h3>
+                      <span className="toggle-icon">▼</span>
+                    </div>
+                    <div className={`collapsible-content ${showBricksCustomizer ? 'open' : ''}`}>
+                      <div className="brick-list">
+                        {Object.entries(BRICKS).map(([brickId, brick]) => (
+                          <div
+                            key={brickId}
+                            className={`brick-item ${selectedBricks[brickId] ? 'included' : 'excluded'}`}
+                          >
+                            <div className="brick-info">
+                              <div className="brick-name">{brick.name}</div>
+                              <div className="brick-desc">{brick.desc.substring(0, 100)}...</div>
+                            </div>
+                            <div className="brick-toggle">
+                              <input
+                                type="checkbox"
+                                checked={selectedBricks[brickId] || false}
+                                onChange={() => toggleBrick(brickId)}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -982,44 +1122,58 @@
                   <h2>Cost Summary</h2>
                 </div>
                 <div className="panel-body">
-                  <h4 style={{ marginBottom: 15 }}>Monthly Hours by Service</h4>
-                  {Object.entries(selectedBricks).filter(([_, included]) => included).map(([brickId]) => (
-                    <div key={brickId} style={{ marginBottom: 15 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>{BRICKS[brickId].name}</div>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        {['mo1', 'mo2', 'mo3', 'mo4', 'mo5'].map(month => (
-                          <div key={month} style={{ flex: 1 }}>
-                            <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>
-                              {month.replace('mo', 'Mo ')}
-                            </div>
-                            <input
-                              type="number"
-                              min="0"
-                              value={brickHours[brickId]?.[month] || 0}
-                              onChange={(e) => updateBrickHours(brickId, month, e.target.value)}
-                              style={{ width: '100%', padding: 8, textAlign: 'center' }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                  <div className="summary-row total" style={{ marginTop: 0, paddingTop: 0, borderTop: 'none' }}>
+                    <span className="label">Avg Ongoing Monthly Fee (Mo 2-12)</span>
+                    <span>{formatCurrency(totals.avgOngoingFee)}</span>
+                  </div>
 
-                  <div style={{ marginTop: 30, paddingTop: 20, borderTop: '2px solid #eee' }}>
-                    <h4 style={{ marginBottom: 15 }}>Monthly Fee Breakdown</h4>
-                    {['mo1', 'mo2', 'mo3', 'mo4', 'mo5'].map(month => (
-                      <div className="summary-row" key={month}>
-                        <span className="label">Month {month.replace('mo', '')}</span>
-                        <span>{formatCurrency(totals.monthlyFees[month])}</span>
-                      </div>
-                    ))}
-                    <div className="summary-row">
-                      <span className="label">Tech Fee (per month)</span>
-                      <span>{includeTechFee ? formatCurrency(TECH_FEE) : '$0'}</span>
+                  <div style={{ marginTop: 20 }}>
+                    <div
+                      className={`collapsible-header ${showCostDetails ? 'open' : ''}`}
+                      onClick={() => setShowCostDetails(!showCostDetails)}
+                    >
+                      <h3>View Cost Details</h3>
+                      <span className="toggle-icon">▼</span>
                     </div>
-                    <div className="summary-row total">
-                      <span className="label">Avg Ongoing Monthly Fee</span>
-                      <span>{formatCurrency(totals.avgOngoingFee)}</span>
+                    <div className={`collapsible-content ${showCostDetails ? 'open' : ''}`}>
+                      <h4 style={{ marginBottom: 15, marginTop: 10 }}>Monthly Hours by Service</h4>
+                      {Object.entries(selectedBricks).filter(([_, included]) => included).map(([brickId]) => (
+                        <div key={brickId} style={{ marginBottom: 20 }}>
+                          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>{BRICKS[brickId].name}</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
+                            {['mo1', 'mo2', 'mo3', 'mo4', 'mo5', 'mo6', 'mo7', 'mo8', 'mo9', 'mo10', 'mo11', 'mo12'].map(month => (
+                              <div key={month}>
+                                <div style={{ fontSize: 9, color: '#666', marginBottom: 3, textAlign: 'center' }}>
+                                  {month.replace('mo', '')}
+                                </div>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={brickHours[brickId]?.[month] || 0}
+                                  onChange={(e) => updateBrickHours(brickId, month, e.target.value)}
+                                  style={{ width: '100%', padding: 6, textAlign: 'center', fontSize: 12 }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                      <div style={{ marginTop: 30, paddingTop: 20, borderTop: '2px solid #eee' }}>
+                        <h4 style={{ marginBottom: 15 }}>Monthly Fee Breakdown</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                          {['mo1', 'mo2', 'mo3', 'mo4', 'mo5', 'mo6', 'mo7', 'mo8', 'mo9', 'mo10', 'mo11', 'mo12'].map(month => (
+                            <div key={month} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #eee' }}>
+                              <span style={{ color: '#666', fontSize: 13 }}>Mo {month.replace('mo', '')}</span>
+                              <span style={{ fontSize: 13 }}>{formatCurrency(totals.monthlyFees[month])}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="summary-row" style={{ marginTop: 15 }}>
+                          <span className="label">Tech Fee (per month)</span>
+                          <span>{includeTechFee ? formatCurrency(TECH_FEE) : '$0'}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -1077,59 +1231,30 @@
                 </div>
                 <div className="editable-row full">
                   <div className="editable-field">
-                    <label>Mission Statement</label>
-                    <textarea
-                      value={clientInfo.mission}
-                      onChange={(e) => setClientInfo({...clientInfo, mission: e.target.value})}
-                      placeholder="e.g., Lead Demand Generation and support growth initiatives for Imubit."
-                    />
-                  </div>
-                </div>
-                <div className="editable-row">
-                  <div className="editable-field">
-                    <label>Industries</label>
-                    <input
-                      type="text"
-                      value={clientInfo.industries}
-                      onChange={(e) => setClientInfo({...clientInfo, industries: e.target.value})}
-                      placeholder="e.g., Oil & gas refining, petrochemicals, chemicals"
-                    />
-                  </div>
-                  <div className="editable-field">
-                    <label>Funnel Flow</label>
-                    <input
-                      type="text"
-                      value={clientInfo.funnelFlow}
-                      onChange={(e) => setClientInfo({...clientInfo, funnelFlow: e.target.value})}
-                      placeholder="e.g., Paid → Content → Demo/Webinar"
-                    />
-                  </div>
-                </div>
-                <div className="editable-row">
-                  <div className="editable-field">
-                    <label>Decision Makers</label>
-                    <textarea
-                      value={clientInfo.decisionMakers}
-                      onChange={(e) => setClientInfo({...clientInfo, decisionMakers: e.target.value})}
-                      placeholder="e.g., Executives concerned with staffing turnover. Process Control Engineers concerned with models."
-                    />
-                  </div>
-                  <div className="editable-field">
-                    <label>Solution</label>
-                    <textarea
-                      value={clientInfo.solution}
-                      onChange={(e) => setClientInfo({...clientInfo, solution: e.target.value})}
-                      placeholder="Describe the client's solution/product..."
-                    />
-                  </div>
-                </div>
-                <div className="editable-row full">
-                  <div className="editable-field">
-                    <label>Milestones</label>
-                    <textarea
-                      value={clientInfo.milestones}
-                      onChange={(e) => setClientInfo({...clientInfo, milestones: e.target.value})}
-                      placeholder="e.g., Soft launch in February 2026."
+                    <label>Additional Details</label>
+                    <div className="rich-editor-toolbar">
+                      <button type="button" onClick={() => execCommand('bold')} title="Bold"><b>B</b></button>
+                      <button type="button" onClick={() => execCommand('italic')} title="Italic"><i>I</i></button>
+                      <button type="button" onClick={() => execCommand('underline')} title="Underline"><u>U</u></button>
+                      <button type="button" onClick={() => execCommand('hiliteColor', '#F5CB5C')} title="Highlight">🖍</button>
+                      <select onChange={(e) => { execCommand('fontSize', e.target.value); e.target.value = ''; }} defaultValue="">
+                        <option value="" disabled>Size</option>
+                        <option value="1">Small</option>
+                        <option value="3">Normal</option>
+                        <option value="5">Large</option>
+                        <option value="7">X-Large</option>
+                      </select>
+                      <button type="button" onClick={() => execCommand('insertUnorderedList')} title="Bullet List">• List</button>
+                      <button type="button" onClick={() => execCommand('insertOrderedList')} title="Numbered List">1. List</button>
+                      <button type="button" onClick={() => execCommand('removeFormat')} title="Clear Formatting">Clear</button>
+                    </div>
+                    <div
+                      ref={editorRef}
+                      className="rich-editor-content"
+                      contentEditable
+                      onInput={handleEditorInput}
+                      dangerouslySetInnerHTML={{ __html: clientInfo.additionalDetails }}
+                      placeholder="Add any additional details about the client, mission, industries, decision makers, solution, funnel flow, milestones, etc."
                     />
                   </div>
                 </div>
@@ -1144,45 +1269,14 @@
                   <div className="pdf-date">{clientInfo.date}</div>
                 </div>
 
-                {clientInfo.mission && (
-                  <div className="pdf-mission">
-                    <span>{clientInfo.mission.split(' ').slice(0, 4).join(' ')}</span>{' '}
-                    {clientInfo.mission.split(' ').slice(4).join(' ')}
+                {clientInfo.additionalDetails && (
+                  <div className="pdf-details">
+                    <div
+                      className="pdf-additional-details"
+                      dangerouslySetInnerHTML={{ __html: clientInfo.additionalDetails }}
+                    />
                   </div>
                 )}
-
-                <div className="pdf-details">
-                  {clientInfo.industries && (
-                    <div className="pdf-detail-row">
-                      <div className="pdf-detail-label">Industries</div>
-                      <div className="pdf-detail-value">{clientInfo.industries}</div>
-                    </div>
-                  )}
-                  {clientInfo.decisionMakers && (
-                    <div className="pdf-detail-row">
-                      <div className="pdf-detail-label">Decision Makers</div>
-                      <div className="pdf-detail-value">{clientInfo.decisionMakers}</div>
-                    </div>
-                  )}
-                  {clientInfo.solution && (
-                    <div className="pdf-detail-row">
-                      <div className="pdf-detail-label">Solution</div>
-                      <div className="pdf-detail-value">{clientInfo.solution}</div>
-                    </div>
-                  )}
-                  {clientInfo.funnelFlow && (
-                    <div className="pdf-detail-row">
-                      <div className="pdf-detail-label">Funnel Flow</div>
-                      <div className="pdf-detail-value">{clientInfo.funnelFlow}</div>
-                    </div>
-                  )}
-                  {clientInfo.milestones && (
-                    <div className="pdf-detail-row">
-                      <div className="pdf-detail-label">Milestones</div>
-                      <div className="pdf-detail-value">{clientInfo.milestones}</div>
-                    </div>
-                  )}
-                </div>
 
                 <div className="pdf-services">
                   <div className="pdf-service-header">{clientInfo.name || 'Client'}</div>
@@ -1223,27 +1317,91 @@
                   <div className="pdf-terms-grid">
                     <div className="pdf-term-section">
                       <h4>Ownership</h4>
-                      <p>Consultant will provide a finished product(s) to the Client in the form of digital documents and asset files. These files become the exclusive property of the Client upon acceptance of delivery.</p>
+                      <p>Consultant will provide a finished product(s) to the Client in the form of digital documents and asset files. These files become the exclusive property of the Client upon acceptance of delivery. The finished product(s) may depend on objects and other third-party utilities that are the property of their respective owners. No rights to these dependencies are expressed or implied. Additional licensing may be required with third-party assets.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Independent Contractors</h4>
+                      <p>Contractors may be used for areas of work that fall outside of Consultant's offerings. Consultant retains the right to subcontract any portion of the Contract.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Response Time</h4>
+                      <p>Within the duration of this Agreement Consultant will make every effort to reply to inquiries within one (1) business days, except where Client has been previously notified of a period of limited availability. Client shall assign and provide a day-to-day marketing point-of-contact employee who will oversee the marketing activities that is a non-founder with Consultant prior to project kickoff.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Dependencies</h4>
+                      <p>In the event that any aspect of this Agreement is dependent on a separate third party or the Client's team, the quality and punctuality of the finished product(s) may be subject to said party's ability to meet the required timelines and/or level of quality. Consultant is not responsible for any delay or defect caused by separate third party or the Client's teams.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Backups</h4>
+                      <p>Consultant maintains internal backups of active project files. This backup system is not intended as a solution for The Client, rather as a code archive through the duration of this Agreement. The Client is solely responsible for the backup and restoration of the finished product(s) and any associated data.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Digital Paid Media Hard Costs</h4>
+                      <p>The estimated digital paid media hard costs provided in this Agreement are based on current market conditions, industry trends, and our best judgment at the time of preparation. Digital advertising costs can be subject to various factors beyond our control, including but not limited to fluctuations in advertising platform algorithms, bidding strategies, competition, and market dynamics. Due to inherent variables, actual hard costs associated with digital paid media campaigns may vary. Estimated hard costs provided herein are intended as a guideline and may be subject to adjustment. In consideration of the factors outlined above, the Client agrees to pay an amount equal to 105% of the media budget. A contingency budget of 5% shall be allocated to cover potential overages and will be reconciled every six months from the date on which the Consultant assumes responsibility for the first channel campaign. Following each six month reconciliation, If actual media expenditures exceed 105% of the budgeted amount, the Consultant shall issue a credit on the next billing cycle for the difference between the actual spend and 105% of the invoiced amount. Budgets for multi-location campaigns shall be assessed in aggregate rather than on an individual location basis. Client shall contract and pay for media platform services directly with the provider thereof. In the event Client will be unable to make such payment directly, Client and Consultant shall confer and if agreed in writing by Client and Consultant (such agreement to be in Consultant's sole discretion), Consultant shall make such payment on behalf of Client. In such event, Client shall pay Consultant the amount due to such providers before such media can run, and the terms for these invoices will be net due upon receipt. In the event Client fails to make such payment, Consultant shall have no obligation to run such media and/or make any payment therefor.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Security</h4>
+                      <p>Consultant agrees to abide by and maintain adequate data security measures, consistent with standards and best practices within the advertising industry, and to protect Client data from unauthorized disclosure or acquisition by an unauthorized person. These measures shall include, but are not limited to:<br/>a. Passwords and Employee Access. Consultant shall secure usernames, passwords, and any other means of gaining access to the Services or to Client data. Consultant shall only provide access to Client data to employees or contractors that are performing the Services.<br/>b. Security Protocols. Both parties agree to maintain security protocols that meet industry standards in the transfer or transmission of any data, including ensuring that data may only be viewed or accessed by parties legally allowed to do so. Consultant shall maintain all data obtained or generated pursuant to the Agreement in a secure digital environment and not copy, reproduce, or transmit data obtained pursuant to the Agreement, except as necessary to fulfill the purpose of data requests.<br/>c. Two-Factor Authentication (2FA). All applications used by Consultant in servicing Client are required to enable 2FA.<br/>d. Data Breach. In the event that Consultant discovers that Client data has been accessed or obtained by an unauthorized individual, Consultant shall provide notification to Client within a reasonable amount of time of the incident, not to exceed 72 hours.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Limited Liability</h4>
+                      <p>The Client agrees that any liability of Consultant relating to this agreement and the services performed shall be limited to the amount of fees actually received by Consultant during the calendar month in which the claim arose, from the Client under this agreement regarding the services in question. In no event shall either party be liable for any special, incidental, indirect, cover, consequential, exemplary or punitive damages; any damages based on injury to person or property; or any lost sales, profits or data, even if the party is told that any such damages may occur.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Warranty</h4>
+                      <p>Content, branding, creative, website, digital marketing, and advertising projects are NOT subject to warranty.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Client</h4>
+                      <p>A link to the Client website/application website may be placed on the Consultant web site or other collateral as part of its business portfolio.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Confidentiality</h4>
+                      <p>Each party agrees that during the course of this Agreement, information that is confidential or proprietary may be disclosed to the other party, including without limitation processes, product designs, sales, cost, technology, pricing, and customer data, and other unpublished financial information, product and business plans, advertising revenues, usage rates, advertising relationships, projections and marketing data ("Confidential Information"). Each party agrees that, except as permitted by this Agreement, such party shall not make any disclosure of the Confidential Information other than to its employees who have a need to know such information in connection with this Agreement, which employees shall be notified of the confidentiality obligations with respect to the Confidential Information. The confidentiality obligations of each party and their respective employees shall survive the expiration or termination of this Agreement.</p>
                     </div>
                     <div className="pdf-term-section">
                       <h4>Renewal</h4>
                       <p>This Agreement shall remain in effect until terminated by either party as permitted herein. Ongoing monthly services auto-renew unless otherwise amended or terminated by Client or Consultant.</p>
                     </div>
                     <div className="pdf-term-section">
-                      <h4>Response Time</h4>
-                      <p>Within the duration of this Agreement Consultant will make every effort to reply to inquiries within one (1) business days, except where Client has been previously notified of a period of limited availability.</p>
+                      <h4>Cancellation</h4>
+                      <p>Client may terminate this Agreement at any time by giving Consultant (c/o Consultant's CEO, Justin Watkins) not less than 90 days' prior written notice. Termination shall be deemed effective on the first day of the month following Consultant's receipt of such notice: (i) Consultant shall provide invoices setting forth the costs payable under this clause within 30 days of termination notice. Written notices provide a full 90-day for all work to be submitted by Consultant. (ii) Client shall pay Consultant an amount equal to the next 90 days of scheduled monthly invoices according to the agreed-upon Service Fee inclusive of outstanding fees payable under this Agreement and all hard cost expenses through the effective date of such termination within 45 days after invoice receipt.</p>
                     </div>
                     <div className="pdf-term-section">
-                      <h4>Cancellation</h4>
-                      <p>Client may terminate this Agreement at any time by giving Consultant not less than 90 days' prior written notice.</p>
+                      <h4>Expiration</h4>
+                      <p>Provided Client has paid Consultant the agreed-upon Service Fee as provided herein, this Agreement shall expire if 90 days past termination notice and full payment or completion of one-time only projects with no auto-renewal ongoing services rendered. In the event Client fails to pay Consultant the agreed-upon Payment Schedule as provided herein, this Agreement shall remain in full force and effect until the invoices have been paid in full. Should Client pay for billable hours and hard costs and pause, stop or choose not to utilize for any reason, those hours will be made available for up to 6 months from point of invoice issuance by Consultant. Upon 6 months non-utilization hours and hard costs will expire. Received payments for planned or completed work will be performed according to scope of work and hourly rate but not refunded. Consultant will provide the timing of when work corresponding to payment will be completed.</p>
                     </div>
                     <div className="pdf-term-section">
                       <h4>Additional Services</h4>
-                      <p>Requests and revisions beyond what is detailed in this scope including technical support upon Client prior written approval will be billed at $195/hour.</p>
+                      <p>Requests and revisions beyond what is detailed in this scope including technical support upon Client prior written approval will be billed at $195/hour. Should specifications of the project change, a new estimate will be provided for approval. If the project is canceled before completion, all accrued charges to date will be billed. In some cases, estimates may vary by +/- 10% in which instance the client will be notified of the difference along with options on how best to proceed.</p>
                     </div>
                     <div className="pdf-term-section">
                       <h4>Payment</h4>
-                      <p>Client shall pay Consultant for the first month invoice outlined in the scope, billed upon SOW signature and due prior to project kickoff. All payments are due within forty-five (45) days of billing.</p>
+                      <p>Client shall pay Consultant for the first month invoice outlined in the scope, billed upon SOW signature and due prior to project kickoff. Work will begin upon receipt. All payments are due within forty-five (45) days of billing. Payments will be made via ACH or Check to: Native Digital, 1612 Grand Suite 300, Kansas City, MO 64108. If payment is to be received via wire, Client will be responsible for any fees incurred and the cost will appear on the following month's invoice.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Interest</h4>
+                      <p>Payments due and unpaid to Consultant hereunder shall bear interest at the rate of eighteen percent (18%) per annum after the sum is past due for more than sixty (60) days. Consultant reserves the right to discontinue work until accounts are settled.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Anti-poaching</h4>
+                      <p>It is agreed that Client shall not knowingly hire any employee of Consultant, unless and until twelve months (12) has elapsed since their last date of employment by Agency. It is agreed that Consultant shall not knowingly hire any employee of Client unless and until twelve months (12) has elapsed since their last date of employment by Client.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Mediation</h4>
+                      <p>In the event either Consultant or Client disputes the payment or performance by the other party of any obligation under this Agreement, or alleges any default hereunder by the other party, the non-defaulting party may give the other party written notice of such dispute or breach (a "Dispute Notice") setting forth in reasonable detail the dispute or default of the other party (the "Agreement Dispute"). If, within twenty (20) calendar days (or such longer period as may be agreed in writing between the parties) after receipt by a party of a Dispute Notice, the parties have not succeeded in negotiating a resolution of the Agreement Dispute, the parties agree to submit the Agreement Dispute at the earliest possible date to mediation conducted in accordance with the Commercial Mediation Rules of the American Arbitration Association ("AAA"), and to bear equally the costs of the mediation; provided, however, that each party shall bear its own costs in connection with such mediation. The parties agree to participate in good faith in the mediation and negotiations related thereto for a period of thirty (30) days or such longer period as they may mutually agree following the initial mediation session (the "Mediation Period"). In the event the parties are unable to resolve the Agreement Dispute through mediation prior to the expiration of the Mediation Period, then either party shall be entitled to pursue all of its right and remedies under this Agreement, at law or in equity, with respect to such Agreement Dispute, including without limitation pursuant to an appropriate legal action.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Applicable Law</h4>
+                      <p>This Agreement shall be governed by the laws of the State of Missouri without regard to its conflict of laws provisions, and Client and Consultant agree that the sole venue and jurisdiction for disputes arising from this Agreement shall be the appropriate state or federal court located in Kansas City, Missouri, and Client and Consultant hereby submit to the jurisdiction of such courts.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Acceptance</h4>
+                      <p>Changes to this Agreement will be subject to mutual written agreement of the Parties. Each Party agrees to the stated terms as of the last date written below.</p>
+                    </div>
+                    <div className="pdf-term-section">
+                      <h4>Email Communication</h4>
+                      <p>Consultant will add Client marketing team to email newsletter mailing list with approval of this scope. Emails are sent monthly with links to resources, tools and top news. The Client team may opt-out at any time by unsubscribing to the emails or initialing here: _______</p>
                     </div>
                   </div>
                 </div>
